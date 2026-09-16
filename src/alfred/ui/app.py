@@ -82,8 +82,11 @@ class AlfredApp(ctk.CTk):
         self.theme_manager = ThemeManager(self.config_manager.app_config.ui)
 
         self.title("Alfred - Raccourcis à Modes & Grille")
-        self.geometry("720x520")
-        self.minsize(580, 420)
+        self.geometry("640x350")
+        self.minsize(540, 290)
+
+        # Configuration de l'icône de la fenêtre principale et barre des tâches
+        self._setup_window_icon()
 
         if self.config_manager.app_config.ui.always_on_top:
             self.attributes("-topmost", True)
@@ -116,9 +119,20 @@ class AlfredApp(ctk.CTk):
         # Afficher la vue par défaut (Dashboard)
         self._switch_view("dashboard")
 
+        # Capture de la réduction de fenêtre (clic sur le bouton '_' de la barre de titre)
+        self.bind("<Unmap>", self._on_window_unmap)
+
         # Réduction initiale dans le tray si configurée
         if getattr(self.config_manager.app_config.ui, "start_minimized", False):
             self.after(50, self.minimize_to_tray)
+
+    def _on_window_unmap(self, event: any) -> None:
+        """Détecte quand l'utilisateur réduit la fenêtre via le bouton '_' de Windows."""
+        try:
+            if event.widget == self and self.state() == "iconic":
+                self.after(10, self.minimize_to_tray)
+        except Exception:
+            pass
 
     def _update_close_shortcut_binding(self) -> None:
         """Met à jour les raccourcis clavier de fermeture selon config.toml [general].close."""
@@ -165,6 +179,29 @@ class AlfredApp(ctk.CTk):
         mouse.restore_initial_speed()
         self.destroy()
 
+    def _setup_window_icon(self) -> None:
+        """Configure l'icône de la fenêtre et de la barre des tâches Windows."""
+        try:
+            from src.alfred.core.assets import get_icon_ico_path, get_icon_png_path
+            ico_path = get_icon_ico_path()
+            if ico_path.exists():
+                try:
+                    self.iconbitmap(str(ico_path))
+                except Exception as e:
+                    logger.debug("Impossible d'appliquer l'icône ICO : %s", e)
+
+            png_path = get_icon_png_path()
+            if png_path.exists():
+                try:
+                    from PIL import Image, ImageTk
+                    pil_img = Image.open(png_path)
+                    tk_icon = ImageTk.PhotoImage(pil_img)
+                    self.wm_iconphoto(True, tk_icon)
+                    self._app_icon_ref = tk_icon
+                except Exception as e:
+                    logger.debug("Impossible d'appliquer l'icône PNG : %s", e)
+        except Exception as e:
+            logger.debug("Erreur lors de la configuration de l'icône de la fenêtre : %s", e)
 
     def _build_sticky_header(self) -> None:
         """Construit la barre de navigation supérieure toujours visible (Sticky Header)."""
@@ -172,13 +209,30 @@ class AlfredApp(ctk.CTk):
         self.header_frame.grid(row=0, column=0, sticky="ew")
         self.header_frame.grid_columnconfigure(1, weight=1)
 
-        # 1. Logo & Titre compact
+        # 1. Logo, avatar du majordome & Titre compact
         left_box = ctk.CTkFrame(self.header_frame, fg_color="transparent")
         left_box.grid(row=0, column=0, padx=(10, 6), pady=6, sticky="w")
 
+        # Avatar du majordome Alfred
+        try:
+            from src.alfred.core.assets import get_icon_png_path
+            from PIL import Image
+            icon_path = get_icon_png_path()
+            if icon_path.exists():
+                pil_avatar = Image.open(icon_path)
+                self._avatar_ctk_image = ctk.CTkImage(
+                    light_image=pil_avatar,
+                    dark_image=pil_avatar,
+                    size=(28, 28)
+                )
+                lbl_avatar = ctk.CTkLabel(left_box, image=self._avatar_ctk_image, text="")
+                lbl_avatar.pack(side="left", padx=(0, 6))
+        except Exception as e:
+            logger.debug("Impossible de charger l'avatar d'Alfred dans le header : %s", e)
+
         lbl_logo = ctk.CTkLabel(
             left_box,
-            text="⚡ ALFRED",
+            text="ALFRED",
             font=self.theme_manager.get_font(size_offset=2, weight="bold")
         )
         lbl_logo.pack(side="left", padx=(0, 6))
@@ -277,20 +331,6 @@ class AlfredApp(ctk.CTk):
         btn_settings.pack(side="left", padx=2)
         ToolTip(btn_settings, "Paramètres d'Alfred")
 
-        # Bouton Réduire dans la zone de notification (Tray)
-        self.btn_minimize_tray = ctk.CTkButton(
-            right_box,
-            text="📥",
-            width=34,
-            height=28,
-            font=self.theme_manager.get_font(size_offset=0),
-            fg_color="transparent",
-            border_width=1,
-            command=self.minimize_to_tray
-        )
-        self.btn_minimize_tray.pack(side="left", padx=2)
-        ToolTip(self.btn_minimize_tray, "Réduire dans la zone de notification (Systray)")
-
     def _build_content_area(self) -> None:
         """Construit les différentes vues interchangeables."""
         self.content_container = ctk.CTkFrame(self, fg_color="transparent")
@@ -305,6 +345,7 @@ class AlfredApp(ctk.CTk):
                 self.state_manager,
                 self.config_manager,
                 self.theme_manager,
+                on_minimize=self.minimize_to_tray,
             ),
             "actions": ActionsView(
                 self.content_container,
@@ -318,6 +359,7 @@ class AlfredApp(ctk.CTk):
                 self.theme_manager,
             ),
         }
+        self.btn_minimize_tray = self.views["dashboard"].btn_minimize
 
     def _switch_view(self, view_name: str) -> None:
         """Bascule d'onglet/vue."""

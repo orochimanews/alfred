@@ -6,6 +6,23 @@ import logging
 import argparse
 from pathlib import Path
 
+import os
+import threading
+
+# En mode PyInstaller --windowed, sys.stdout et sys.stderr sont None.
+# On les redirige pour éviter les AttributeError dans les bibliothèques tierces.
+if sys.stdout is None:
+    try:
+        sys.stdout = open(os.devnull, "w", encoding="utf-8")
+    except Exception:
+        pass
+if sys.stderr is None:
+    try:
+        sys.stderr = open(os.devnull, "w", encoding="utf-8")
+    except Exception:
+        pass
+
+
 def setup_logging() -> None:
     """Configure la journalisation à la fois sur console et dans alfred.log."""
     if getattr(sys, "frozen", False):
@@ -17,8 +34,11 @@ def setup_logging() -> None:
     handlers: list[logging.Handler] = [
         logging.FileHandler(log_file, encoding="utf-8", mode="a"),
     ]
-    if sys.stderr is not None:
-        handlers.append(logging.StreamHandler(sys.stderr))
+    if sys.stderr is not None and not getattr(sys.stderr, "closed", False):
+        try:
+            handlers.append(logging.StreamHandler(sys.stderr))
+        except Exception:
+            pass
 
     logging.basicConfig(
         level=logging.INFO,
@@ -27,8 +47,82 @@ def setup_logging() -> None:
         handlers=handlers,
     )
 
+
 setup_logging()
 logger = logging.getLogger("Alfred")
+
+
+def _install_exception_handlers() -> None:
+    """Capture les exceptions non gérées du thread principal et des threads d'arrière-plan."""
+    def _handle_unhandled_exception(exc_type, exc_value, exc_traceback):
+        logger.critical("Exception non gérée reçue :", exc_info=(exc_type, exc_value, exc_traceback))
+
+    sys.excepthook = _handle_unhandled_exception
+
+    if hasattr(threading, "excepthook"):
+        def _handle_thread_exception(args):
+            logger.critical("Exception non gérée dans le thread '%s' :", args.thread.name, exc_info=(args.exc_type, args.exc_value, args.exc_traceback))
+        threading.excepthook = _handle_thread_exception
+
+
+_install_exception_handlers()
+
+
+def configure_windows_process() -> None:
+    """Optimise le processus sous Windows (priorité et prévention du mode efficacité EcoQoS)."""
+    if sys.platform != "win32":
+        return
+
+    try:
+        import ctypes
+        from ctypes import wintypes
+
+        # 1. Identifiant AppUserModelID pour la barre des tâches
+        try:
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("alfred.shortcut.system.v1")
+        except Exception:
+            pass
+
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        p_handle = kernel32.GetCurrentProcess()
+
+        # 2. Définir la priorité du processus à Haute (HIGH_PRIORITY_CLASS)
+        # Nécessaire pour que le hook système bas niveau ne subisse aucun lag en tâche de fond
+        HIGH_PRIORITY_CLASS = 0x00000080
+        kernel32.SetPriorityClass(p_handle, HIGH_PRIORITY_CLASS)
+
+        # 3. Désactiver explicitement le Power Throttling / EcoQoS Windows 11
+        # Empêche Windows de suspendre ou ralentir les threads d'arrière-plan quand la fenêtre est minimisée
+        try:
+            ProcessPowerThrottling = 4
+            PROCESS_POWER_THROTTLING_CURRENT_VERSION = 1
+            PROCESS_POWER_THROTTLING_EXECUTION_SPEED = 0x1
+
+            class PROCESS_POWER_THROTTLING_STATE(ctypes.Structure):
+                _fields_ = [
+                    ("Version", wintypes.DWORD),
+                    ("ControlMask", wintypes.DWORD),
+                    ("StateMask", wintypes.DWORD),
+                ]
+
+            throttling_state = PROCESS_POWER_THROTTLING_STATE()
+            throttling_state.Version = PROCESS_POWER_THROTTLING_CURRENT_VERSION
+            throttling_state.ControlMask = PROCESS_POWER_THROTTLING_EXECUTION_SPEED
+            throttling_state.StateMask = 0  # Désactiver le throttling
+
+            kernel32.SetProcessInformation(
+                p_handle,
+                ProcessPowerThrottling,
+                ctypes.byref(throttling_state),
+                ctypes.sizeof(throttling_state),
+            )
+        except Exception:
+            pass
+
+        logger.info("Configuration système Windows appliquée (Haute priorité & EcoQoS prévenu).")
+    except Exception as err:
+        logger.debug("Impossible d'appliquer certaines optimisations système Windows : %s", err)
+
 
 from src.alfred.core.config import ConfigManager
 from src.alfred.core.state import StateManager
@@ -45,13 +139,8 @@ def main() -> None:
 
     logger.info("Démarrage d'Alfred...")
 
-    # Association de l'icône personnalisée d'Alfred dans la barre des tâches Windows
-    if sys.platform == "win32":
-        try:
-            import ctypes
-            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("alfred.shortcut.system.v1")
-        except Exception:
-            pass
+    # Application des optimisations de processus Windows
+    configure_windows_process()
 
     # 1. Chargement de la configuration
     config_mgr = ConfigManager()

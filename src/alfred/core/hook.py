@@ -1,6 +1,7 @@
 """Intercepteur global du clavier système (Keyboard Hook) pour Alfred."""
 
 from __future__ import annotations
+import sys
 import threading
 import logging
 from typing import TYPE_CHECKING
@@ -13,6 +14,37 @@ if TYPE_CHECKING:
     from src.alfred.core.grid import GridManager
 
 logger = logging.getLogger(__name__)
+
+
+def _patch_keyboard_windows_listen() -> None:
+    """Corrige le bug critique de pointeur NULL dans keyboard._winkeyboard.listen sous Windows.
+
+    Par défaut, keyboard._winkeyboard fait 'msg = LPMSG()', ce qui passe un pointeur NULL
+    à GetMessage(). Dès qu'un message système arrive dans la file du thread, une violation
+    d'accès (Access Violation 0x00000008) survient et tue le thread d'écoute en silence.
+    Ce patch alloue une structure MSG() valide et implémente la vraie boucle Win32.
+    """
+    if sys.platform != "win32":
+        return
+
+    try:
+        from keyboard import _winkeyboard
+        import ctypes
+        from ctypes.wintypes import MSG
+
+        def safe_listen(callback):
+            _winkeyboard.prepare_intercept(callback)
+            msg = MSG()
+            p_msg = ctypes.byref(msg)
+            # while GetMessage(...) > 0 : continue tant que WM_QUIT (0) ou une erreur (-1) n'arrive pas
+            while _winkeyboard.GetMessage(p_msg, 0, 0, 0) > 0:
+                _winkeyboard.TranslateMessage(p_msg)
+                _winkeyboard.DispatchMessage(p_msg)
+
+        _winkeyboard.listen = safe_listen
+        logger.debug("Patch de sécurité appliqué à keyboard._winkeyboard.listen.")
+    except Exception as err:
+        logger.warning("Impossible de patcher keyboard._winkeyboard.listen : %s", err)
 
 
 class KeyboardHookService:
@@ -36,6 +68,8 @@ class KeyboardHookService:
         """Démarre l'écoute globale du clavier."""
         if self._hook_installed:
             return
+        # Appliquer le patch Win32 avant d'installer le hook
+        _patch_keyboard_windows_listen()
         keyboard.hook(self._on_key_event, suppress=True)
         self._hook_installed = True
         logger.info("Hook clavier global installé avec succès.")
@@ -60,15 +94,24 @@ class KeyboardHookService:
             if not key_name:
                 return True
 
+            # Tolérance de saisie clavier pour AZERTY / verrouillage majuscule :
+            # Sur AZERTY France, la touche physique 53 est le point d'exclamation ('!' sans shift, '§' avec shift/caps lock).
+            candidate_keys: list[str] = [key_name]
+            if key_name == "§" or event.scan_code == 53:
+                if "!" not in candidate_keys:
+                    candidate_keys.append("!")
+
             # Si c'est un relâchement de touche, nettoyer les touches maintenues et laisser passer
             if event.event_type == keyboard.KEY_UP:
-                self._pressed_keys.discard(key_name)
+                for k in candidate_keys:
+                    self._pressed_keys.discard(k)
                 return True
 
             # Événement KEY_DOWN
             # Éviter le spam des répétitions automatiques si la touche est déjà enfoncée
-            is_repeat = key_name in self._pressed_keys
-            self._pressed_keys.add(key_name)
+            is_repeat = any(k in self._pressed_keys for k in candidate_keys)
+            for k in candidate_keys:
+                self._pressed_keys.add(k)
 
             # Si le service est désactivé via le state manager, ne rien intercepter
             if not self.state_manager.is_hook_enabled:
@@ -79,8 +122,15 @@ class KeyboardHookService:
             special_key = gen_cfg.special_mode_key.lower().strip()
 
             # 1. Vérification de la touche de bascule vers le mode spécial (si configurée en dur)
-            if special_key and key_name == special_key and not is_repeat:
-                logger.debug("Touche de mode spécial détectée : '%s'", key_name)
+            matched_special_key = None
+            if special_key and not is_repeat:
+                for cand in candidate_keys:
+                    if cand == special_key:
+                        matched_special_key = cand
+                        break
+
+            if matched_special_key:
+                logger.debug("Touche de mode spécial détectée : '%s'", matched_special_key)
                 if gen_cfg.toggle_special_mode:
                     new_mode = self.state_manager.toggle_mode(gen_cfg.special_mode_name)
                 else:
@@ -89,7 +139,7 @@ class KeyboardHookService:
 
                 self.state_manager.add_log(
                     action_name=f"Bascule vers mode '{new_mode}'",
-                    trigger_key=key_name,
+                    trigger_key=matched_special_key,
                     mode=current_mode,
                     status="success",
                 )
@@ -99,55 +149,63 @@ class KeyboardHookService:
             # 2. Vérification de la grille souris si le mode actif fait partie des active_modes
             grid_cfg = self.config_manager.grid_config
             if grid_cfg.enabled and (current_mode in grid_cfg.active_modes or "all" in grid_cfg.active_modes):
-                # 2a. Touche de bascule vers/depuis le mode sous-grille (subgrid toggle)
-                if self.grid_manager.is_subgrid_toggle_key(key_name):
-                    logger.debug("Touche toggle sous-grille détectée : '%s'", key_name)
-                    threading.Thread(
-                        target=self._execute_subgrid_toggle,
-                        args=(key_name, current_mode),
-                        daemon=True
-                    ).start()
-                    return False
-
-                # 2b. Touche de cellule en mode sous-grille (réutilise les mêmes touches de cases)
-                if current_mode == "subgrid" or self.grid_manager.is_subgrid_active:
-                    if self.grid_manager.is_grid_key(key_name):
-                        logger.debug("Touche sous-grille détectée : '%s'", key_name)
+                for cand in candidate_keys:
+                    # 2a. Touche de bascule vers/depuis le mode sous-grille (subgrid toggle)
+                    if self.grid_manager.is_subgrid_toggle_key(cand):
+                        logger.debug("Touche toggle sous-grille détectée : '%s'", cand)
                         threading.Thread(
-                            target=self._execute_subgrid_jump,
-                            args=(key_name, current_mode),
+                            target=self._execute_subgrid_toggle,
+                            args=(cand, current_mode),
                             daemon=True
                         ).start()
                         return False
 
-                # 2c. Touche de rapprochement du bord (edge snap)
-                if self.grid_manager.is_edge_snap_key(key_name):
-                    logger.debug("Touche de rapprochement bord grille détectée : '%s'", key_name)
-                    threading.Thread(
-                        target=self._execute_grid_edge_snap,
-                        args=(key_name, current_mode),
-                        daemon=True
-                    ).start()
-                    return False
+                    # 2b. Touche de cellule en mode sous-grille (réutilise les mêmes touches de cases)
+                    if current_mode == "subgrid" or self.grid_manager.is_subgrid_active:
+                        if self.grid_manager.is_grid_key(cand):
+                            logger.debug("Touche sous-grille détectée : '%s'", cand)
+                            threading.Thread(
+                                target=self._execute_subgrid_jump,
+                                args=(cand, current_mode),
+                                daemon=True
+                            ).start()
+                            return False
 
-                # 2d. Touche de cellule de grille standard
-                if self.grid_manager.is_grid_key(key_name):
-                    logger.debug("Touche de grille détectée : '%s'", key_name)
-                    # Exécuter dans un thread séparé pour ne pas ralentir le hook système
-                    threading.Thread(
-                        target=self._execute_grid_jump,
-                        args=(key_name, current_mode),
-                        daemon=True
-                    ).start()
-                    return False
+                    # 2c. Touche de rapprochement du bord (edge snap)
+                    if self.grid_manager.is_edge_snap_key(cand):
+                        logger.debug("Touche de rapprochement bord grille détectée : '%s'", cand)
+                        threading.Thread(
+                            target=self._execute_grid_edge_snap,
+                            args=(cand, current_mode),
+                            daemon=True
+                        ).start()
+                        return False
+
+                    # 2d. Touche de cellule de grille standard
+                    if self.grid_manager.is_grid_key(cand):
+                        logger.debug("Touche de grille détectée : '%s'", cand)
+                        # Exécuter dans un thread séparé pour ne pas ralentir le hook système
+                        threading.Thread(
+                            target=self._execute_grid_jump,
+                            args=(cand, current_mode),
+                            daemon=True
+                        ).start()
+                        return False
 
             # 3. Vérification des actions enregistrées pour le mode actif
-            action = self.config_manager.get_action_for_key(key_name, current_mode)
+            action = None
+            matched_trigger = key_name
+            for cand in candidate_keys:
+                action = self.config_manager.get_action_for_key(cand, current_mode)
+                if action is not None:
+                    matched_trigger = cand
+                    break
+
             if action is not None:
-                logger.debug("Action '%s' trouvée pour touche '%s' dans mode '%s'", action.name, key_name, current_mode)
+                logger.debug("Action '%s' trouvée pour touche '%s' dans mode '%s'", action.name, matched_trigger, current_mode)
                 threading.Thread(
                     target=self.commands_engine.execute_action,
-                    args=(action, key_name),
+                    args=(action, matched_trigger),
                     daemon=True
                 ).start()
                 return False
