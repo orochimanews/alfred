@@ -1,0 +1,11 @@
+# Action : Accélérer / basculer la vitesse du curseur
+name = "Vitesse Souris Rapide / Normale"
+description = "Bascule la sensibilité du curseur entre vitesse rapide (18) et normale (10)."
+
+modes = ["special"]
+trigger = "v"
+
+[[commands]]
+type = "mouse_speed"
+speed = 18
+toggle = true

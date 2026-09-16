@@ -1,0 +1,22 @@
+# Action : Macro Exemple Multi-Commandes (Recherche Web)
+name = "Recherche Web Rapide"
+description = "Ouvre un onglet, attend 150ms et tape une recherche exemple."
+
+modes = ["special"]
+trigger = "f"
+
+[[commands]]
+type = "hotkey"
+keys = ["ctrl", "t"]
+
+[[commands]]
+type = "sleep"
+duration = 0.15
+
+[[commands]]
+type = "text"
+content = "https://google.com"
+
+[[commands]]
+type = "hotkey"
+keys = ["enter"]

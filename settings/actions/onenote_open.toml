@@ -1,0 +1,10 @@
+# Action : Lancer ou accéder à Microsoft OneNote
+name = "Lancer OneNote"
+description = "Ouvre ou active l'application Windows Microsoft OneNote."
+
+modes = ["special"]
+trigger = "o"
+
+[[commands]]
+type = "app"
+command = "onenote:"

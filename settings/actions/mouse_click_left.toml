@@ -1,0 +1,10 @@
+# Action : Clic souris gauche
+name = "Clic Gauche"
+description = "Simule un clic du bouton gauche de la souris."
+
+modes = ["special"]
+trigger = "space"
+
+[[commands]]
+type = "click"
+button = "left"

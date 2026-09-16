@@ -1,0 +1,12 @@
+# Action : Sauter au centre de l'écran principal
+name = "Curseur au Centre"
+description = "Place le curseur de la souris exactement au centre de l'écran principal."
+
+modes = ["special"]
+trigger = "j"
+
+[[commands]]
+type = "jump"
+x = 960
+y = 540
+relative = false

@@ -1,0 +1,10 @@
+# Action : Activer le mode grille
+name = "Activer Mode Grille"
+description = "Bascule vers le mode grille pour déplacer le curseur de case en case."
+
+modes = ["special"]
+trigger = "g"
+
+[[commands]]
+type = "mode"
+target = "grid"

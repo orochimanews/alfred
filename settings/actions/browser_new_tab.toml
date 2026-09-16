@@ -1,0 +1,14 @@
+# Action : Ouvrir un nouvel onglet de navigateur (Ctrl+T)
+name = "Nouvel Onglet Navigateur"
+description = "Envoie la combinaison Ctrl+T pour ouvrir un onglet dans le navigateur actif."
+
+# Modes dans lesquels cette action est active
+modes = ["special"]
+
+# Touche déclencheuse
+trigger = "t"
+
+# Séquence de commandes exécutées à la frappe
+[[commands]]
+type = "hotkey"
+keys = ["ctrl", "t"]

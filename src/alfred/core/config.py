@@ -1,0 +1,188 @@
+"""Gestionnaire de configuration et persistance TOML pour Alfred."""
+
+from __future__ import annotations
+import os
+from pathlib import Path
+from typing import Any
+import logging
+import tomllib
+import tomli_w
+
+from src.alfred.core.models import (
+    AppConfig,
+    GeneralConfig,
+    MouseConfig,
+    UIConfig,
+    GridConfig,
+    Action,
+)
+
+logger = logging.getLogger(__name__)
+
+
+class ConfigManager:
+    """Charge, valide et sauvegarde la configuration d'Alfred depuis le dossier settings/."""
+
+    def __init__(self, base_dir: Path | None = None) -> None:
+        if base_dir is None:
+            # Répertoire racine du projet (au-dessus de src/alfred/core)
+            self.root_dir = Path(__file__).resolve().parent.parent.parent.parent
+        else:
+            self.root_dir = Path(base_dir)
+
+        self.settings_dir = self.root_dir / "settings"
+        self.actions_dir = self.settings_dir / "actions"
+        self.config_path = self.settings_dir / "config.toml"
+        self.grid_path = self.settings_dir / "grid.toml"
+        self.commands_path = self.settings_dir / "commands.toml"
+        self.keys_path = self.settings_dir / "keys.toml"
+
+        self.app_config: AppConfig = AppConfig()
+        self.grid_config: GridConfig = GridConfig()
+        self.actions: list[Action] = []
+        self.commands_reference: dict[str, Any] = {}
+        self.keys_reference: dict[str, Any] = {}
+
+    def load_all(self) -> None:
+        """Charge l'ensemble de la configuration depuis le système de fichiers."""
+        self.load_app_config()
+        self.load_grid_config()
+        self.load_actions()
+        self.load_references()
+
+    def load_app_config(self) -> AppConfig:
+        """Charge settings/config.toml."""
+        if not self.config_path.exists():
+            logger.warning("Fichier config.toml introuvable à %s, création avec valeurs par défaut.", self.config_path)
+            self.app_config = AppConfig()
+            self.save_app_config()
+            return self.app_config
+
+        try:
+            with open(self.config_path, "rb") as f:
+                data = tomllib.load(f)
+
+            gen_data = data.get("general", {})
+            general = GeneralConfig(
+                app_name=gen_data.get("app_name", "Alfred"),
+                default_mode=gen_data.get("default_mode", "normal"),
+                special_mode_key=gen_data.get("special_mode_key", "!"),
+                special_mode_name=gen_data.get("special_mode_name", "special"),
+                toggle_special_mode=bool(gen_data.get("toggle_special_mode", True)),
+            )
+
+            mouse_data = data.get("mouse", {})
+            mouse = MouseConfig(
+                default_speed=int(mouse_data.get("default_speed", 10)),
+                fast_speed=int(mouse_data.get("fast_speed", 18)),
+            )
+
+            ui_data = data.get("ui", {})
+            ui = UIConfig(
+                theme=ui_data.get("theme", "dark"),
+                color_theme=ui_data.get("color_theme", "blue"),
+                font_size=int(ui_data.get("font_size", 13)),
+                always_on_top=bool(ui_data.get("always_on_top", True)),
+                start_minimized=bool(ui_data.get("start_minimized", False)),
+            )
+
+            self.app_config = AppConfig(general=general, mouse=mouse, ui=ui)
+        except Exception as err:
+            logger.error("Erreur lors du chargement de %s: %s", self.config_path, err)
+            self.app_config = AppConfig()
+
+        return self.app_config
+
+    def save_app_config(self) -> bool:
+        """Sauvegarde les paramètres actuels dans settings/config.toml."""
+        try:
+            self.settings_dir.mkdir(parents=True, exist_ok=True)
+            data = {
+                "general": {
+                    "app_name": self.app_config.general.app_name,
+                    "default_mode": self.app_config.general.default_mode,
+                    "special_mode_key": self.app_config.general.special_mode_key,
+                    "special_mode_name": self.app_config.general.special_mode_name,
+                    "toggle_special_mode": self.app_config.general.toggle_special_mode,
+                },
+                "mouse": {
+                    "default_speed": self.app_config.mouse.default_speed,
+                    "fast_speed": self.app_config.mouse.fast_speed,
+                },
+                "ui": {
+                    "theme": self.app_config.ui.theme,
+                    "color_theme": self.app_config.ui.color_theme,
+                    "font_size": self.app_config.ui.font_size,
+                    "always_on_top": self.app_config.ui.always_on_top,
+                    "start_minimized": self.app_config.ui.start_minimized,
+                },
+            }
+            with open(self.config_path, "wb") as f:
+                tomli_w.dump(data, f)
+            return True
+        except Exception as err:
+            logger.error("Erreur lors de la sauvegarde de %s: %s", self.config_path, err)
+            return False
+
+    def load_grid_config(self) -> GridConfig:
+        """Charge settings/grid.toml."""
+        if not self.grid_path.exists():
+            self.grid_config = GridConfig()
+            return self.grid_config
+
+        try:
+            with open(self.grid_path, "rb") as f:
+                data = tomllib.load(f)
+            self.grid_config = GridConfig.from_dict(data)
+        except Exception as err:
+            logger.error("Erreur lors du chargement de %s: %s", self.grid_path, err)
+            self.grid_config = GridConfig()
+
+        return self.grid_config
+
+    def load_actions(self) -> list[Action]:
+        """Scanne le répertoire settings/actions/ et charge toutes les actions TOML valides."""
+        self.actions = []
+        if not self.actions_dir.exists():
+            self.actions_dir.mkdir(parents=True, exist_ok=True)
+            return self.actions
+
+        for file_path in sorted(self.actions_dir.glob("*.toml")):
+            try:
+                with open(file_path, "rb") as f:
+                    data = tomllib.load(f)
+                action = Action.from_dict(data)
+                self.actions.append(action)
+            except Exception as err:
+                logger.error("Erreur lors de la lecture de l'action %s: %s", file_path, err)
+
+        return self.actions
+
+    def load_references(self) -> None:
+        """Charge les notices d'aide settings/commands.toml et settings/keys.toml."""
+        if self.commands_path.exists():
+            try:
+                with open(self.commands_path, "rb") as f:
+                    self.commands_reference = tomllib.load(f)
+            except Exception as err:
+                logger.warning("Impossible de lire commands.toml: %s", err)
+
+        if self.keys_path.exists():
+            try:
+                with open(self.keys_path, "rb") as f:
+                    self.keys_reference = tomllib.load(f)
+            except Exception as err:
+                logger.warning("Impossible de lire keys.toml: %s", err)
+
+    def get_action_for_key(self, key_name: str, mode: str) -> Action | None:
+        """Trouve l'action correspondant à une touche dans un mode donné."""
+        normalized_key = key_name.lower().strip()
+        normalized_mode = mode.lower().strip()
+
+        for act in self.actions:
+            if act.trigger.lower().strip() == normalized_key:
+                # Vérifier si l'action est active dans ce mode (ou mode 'all')
+                act_modes = [m.lower().strip() for m in act.modes]
+                if "all" in act_modes or normalized_mode in act_modes:
+                    return act
+        return None

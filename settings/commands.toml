@@ -1,0 +1,140 @@
+# ==============================================================================
+# NOTICE TECHNIQUE DES COMMANDES DISPONIBLES DANS ALFRED
+# ==============================================================================
+# Ce fichier sert de référence documentaire (notice) et de dictionnaire des
+# commandes exécutables par Alfred dans les fichiers d'actions (settings/actions/*.toml).
+#
+# Chaque action peut chaîner une ou plusieurs commandes dans une liste [[commands]].
+# Une commande est définie par son type ("type") et ses paramètres.
+
+[commands.hotkey]
+description = "Simule la frappe d'une combinaison de touches (ex: ctrl+t, alt+f4, win+d)."
+syntax = '{ type = "hotkey", keys = ["ctrl", "t"] }'
+parameters = [
+    { name = "keys", type = "list[str]", description = "Liste ordonnée des touches ou chaîne formatée (ex: ['ctrl', 't'] ou 'ctrl+t')" }
+]
+example = '''
+[[commands]]
+type = "hotkey"
+keys = ["ctrl", "t"]
+'''
+
+[commands.click]
+description = "Simule un clic de souris à la position courante du curseur ou à des coordonnées données."
+syntax = '{ type = "click", button = "left" }'
+parameters = [
+    { name = "button", type = "str", options = ["left", "right", "middle"], default = "left" },
+    { name = "x", type = "int", optional = true, description = "Coordonnée X d'écran (optionnel, reste à la position actuelle si omis)" },
+    { name = "y", type = "int", optional = true, description = "Coordonnée Y d'écran (optionnel)" },
+    { name = "clicks", type = "int", default = 1, description = "Nombre de clics (ex: 2 pour double-clic)" }
+]
+example = '''
+[[commands]]
+type = "click"
+button = "left"
+clicks = 1
+'''
+
+[commands.middle_click]
+description = "Raccourci dédié pour simuler un clic du bouton du milieu (molette)."
+syntax = '{ type = "middle_click" }'
+parameters = []
+example = '''
+[[commands]]
+type = "middle_click"
+'''
+
+[commands.jump]
+description = "Déplace instantanément le curseur de la souris à des coordonnées précises ou de manière relative."
+syntax = '{ type = "jump", x = 960, y = 540 }'
+parameters = [
+    { name = "x", type = "int", description = "Position X absolue (ou relative si relative=true)" },
+    { name = "y", type = "int", description = "Position Y absolue (ou relative si relative=true)" },
+    { name = "relative", type = "bool", default = false, description = "Si true, ajoute x et y à la position courante" }
+]
+example = '''
+[[commands]]
+type = "jump"
+x = 960
+y = 540
+relative = false
+'''
+
+[commands.mode]
+description = "Bascule ou définit le mode actif d'Alfred (ex: 'normal', 'special', 'grid', ou toggle)."
+syntax = '{ type = "mode", target = "special" }'
+parameters = [
+    { name = "target", type = "str", description = "Nom du mode cible ('normal', 'special', 'grid'...), ou 'toggle' pour alterner avec le mode précédent" },
+    { name = "toggle_with", type = "str", optional = true, default = "normal", description = "Mode alternatif en cas de toggle" }
+]
+example = '''
+[[commands]]
+type = "mode"
+target = "special"
+'''
+
+[commands.mouse_speed]
+description = "Modifie ou accélère la vitesse du curseur/trackpad Windows ou bascule entre vitesse normale et rapide."
+syntax = '{ type = "mouse_speed", speed = 18 }'
+parameters = [
+    { name = "speed", type = "int", description = "Vitesse Windows (entre 1 et 20, 10 étant la normale par défaut)" },
+    { name = "toggle", type = "bool", default = false, description = "Bascule entre la vitesse spécifiée et la vitesse par défaut" },
+    { name = "step", type = "int", optional = true, description = "Incrément relatif (+2, -2) pour accélérer/ralentir" }
+]
+example = '''
+[[commands]]
+type = "mouse_speed"
+speed = 18
+toggle = true
+'''
+
+[commands.app]
+description = "Lance ou met au premier plan un programme Windows (ex: OneNote, Notepad, Calc, URL, etc.)."
+syntax = '{ type = "app", command = "onenote:" }'
+parameters = [
+    { name = "command", type = "str", description = "Nom de l'exécutable, URI de protocole Windows (onenote:, ms-settings:), ou chemin complet" },
+    { name = "args", type = "list[str]", optional = true, description = "Arguments de ligne de commande éventuels" }
+]
+example = '''
+[[commands]]
+type = "app"
+command = "onenote:"
+'''
+
+[commands.sleep]
+description = "Effectue une pause temporelle pendant l'exécution d'une séquence de commandes."
+syntax = '{ type = "sleep", duration = 0.15 }'
+parameters = [
+    { name = "duration", type = "float", description = "Temps de pause en secondes (ex: 0.1 pour 100ms)" }
+]
+example = '''
+[[commands]]
+type = "sleep"
+duration = 0.2
+'''
+
+[commands.text]
+description = "Tape textuellement une chaîne de caractères comme au clavier."
+syntax = '{ type = "text", content = "Bonjour !" }'
+parameters = [
+    { name = "content", type = "str", description = "Texte à insérer" }
+]
+example = '''
+[[commands]]
+type = "text"
+content = "Bonjour !"
+'''
+
+[commands.grid_cell]
+description = "Déplace le curseur de la souris au centre d'une case de la grille configurée (settings/grid.toml)."
+syntax = '{ type = "grid_cell", col = 1, row = 1 }'
+parameters = [
+    { name = "col", type = "int", description = "Numéro de colonne (indexé à partir de 0 ou 1)" },
+    { name = "row", type = "int", description = "Numéro de ligne (indexé à partir de 0 ou 1)" }
+]
+example = '''
+[[commands]]
+type = "grid_cell"
+col = 2
+row = 1
+'''
