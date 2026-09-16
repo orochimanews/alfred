@@ -66,13 +66,15 @@ def _normalize_params_from_list(cmd_type: str, items: list[Any]) -> dict[str, An
             return {"duration": items[0]} if items else {"duration": 0.1}
         case "text":
             return {"content": items[0]} if items else {"content": ""}
-        case "grid_cell":
+        case "grid_cell" | "subgrid_cell":
             res = {}
             if len(items) >= 1:
                 res["col"] = items[0]
             if len(items) >= 2:
                 res["row"] = items[1]
             return res
+        case "subgrid":
+            return {"toggle": items[0]} if items else {"toggle": True}
         case "edge_snap" | "grid_edge_snap":
             res = {}
             if len(items) >= 1:
@@ -213,6 +215,12 @@ class GridConfig:
     edge_offset: int = 10
     cells: dict[str, tuple[int, int]] = field(default_factory=dict)
     edge_snap_keys: set[str] = field(default_factory=set)
+    subgrid_enabled: bool = True
+    subgrid_toggle_key: str = "²"
+    subgrid_columns: int = 3
+    subgrid_rows: int = 3
+    subgrid_exit_after_jump: bool = False
+    subgrid_toggle_keys: set[str] = field(default_factory=set)
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> GridConfig:
@@ -296,6 +304,26 @@ class GridConfig:
                         if alias not in cells:
                             cells[alias] = cell_coords
 
+        # Paramètres de sous-grille (Subgrid)
+        subgrid_enabled = bool(grid_data.get("subgrid_enabled", True))
+        raw_subgrid_key = grid_data.get("subgrid_toggle_key", grid_data.get("subgrid_key", "²"))
+        if isinstance(raw_subgrid_key, list):
+            subgrid_toggle_key = ", ".join(str(k) for k in raw_subgrid_key)
+            subgrid_candidates = [str(k).lower().strip() for k in raw_subgrid_key]
+        else:
+            subgrid_toggle_key = str(raw_subgrid_key).strip()
+            subgrid_candidates = [k.lower().strip() for k in subgrid_toggle_key.split(",") if k.strip()]
+
+        subgrid_columns = max(1, int(grid_data.get("subgrid_columns", 3)))
+        subgrid_rows = max(1, int(grid_data.get("subgrid_rows", 3)))
+        subgrid_exit_after_jump = bool(grid_data.get("subgrid_exit_after_jump", False))
+
+        subgrid_toggle_keys: set[str] = set()
+        for cand in subgrid_candidates:
+            if not cand:
+                continue
+            subgrid_toggle_keys.add(cand)
+
         return cls(
             enabled=enabled,
             columns=columns,
@@ -308,6 +336,12 @@ class GridConfig:
             edge_offset=edge_offset,
             cells=cells,
             edge_snap_keys=edge_snap_keys,
+            subgrid_enabled=subgrid_enabled,
+            subgrid_toggle_key=subgrid_toggle_key,
+            subgrid_columns=subgrid_columns,
+            subgrid_rows=subgrid_rows,
+            subgrid_exit_after_jump=subgrid_exit_after_jump,
+            subgrid_toggle_keys=subgrid_toggle_keys,
         )
 
 

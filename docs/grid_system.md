@@ -54,3 +54,30 @@ Une fonction paramétrable permet de rapprocher instantanément la souris très 
   - Si le curseur est sur un bord médian (ex: `(1, 0)` en haut au milieu), la coordonnée verticale est plaquée à $offset$ tout en conservant la position horizontale au milieu.
   - Si le curseur est dans une case intérieure ne touchant aucun bord (ex: `(1, 1)` dans une grille 3x3), aucun déplacement n'est effectué.
 
+---
+
+## 4. Mode Sous-Grille (Subgrid 3x3)
+
+Le mode sous-grille permet un ciblage récursif ultra-précis en divisant la case active courante en une sous-matrice de $C_{\text{sub}} \times R_{\text{sub}}$ (par défaut 3x3 = 9 sous-cases).
+
+### Fonctionnement & Raccourcis
+1. **Saut de case normale** : En mode grille (ou spécial), l'utilisateur saute dans une case avec les touches configurées dans `[cells]` (ex: `&` pour le coin haut-gauche).
+2. **Bascule en Sous-grille** : L'appui sur la touche toggle (par défaut **`²`**) active le mode `subgrid`.
+3. **Mêmes touches de cases** : En mode sous-grille, les touches de cases définies dans `[cells]` sont **réutilisées** :
+   - `&` saute dans le sous-coin haut-gauche de la case.
+   - `(` saute au centre de la case.
+   - `ç` saute dans le sous-coin bas-droite de la case.
+4. **Retour au mode normal/grille** : Réappuyer sur la touche toggle **`²`** quitte la sous-grille et revient au mode grille normal.
+
+### Calcul Géométrique
+Pour une case parente $(c, r)$ et une sous-case $(c_{\text{sub}}, r_{\text{sub}})$ :
+$$X_{\text{sub}} = \left(c + \frac{c_{\text{sub}} + 0.5}{C_{\text{sub}}}\right) \times \frac{W}{C}$$
+$$Y_{\text{sub}} = \left(r + \frac{r_{\text{sub}} + 0.5}{R_{\text{sub}}}\right) \times \frac{H}{R}$$
+
+### Configuration (`settings/grid.toml`)
+- `subgrid_enabled` : Active ou désactive la sous-grille (défaut : `true`).
+- `subgrid_toggle_key` : Touche de bascule pour entrer/sortir du mode (défaut : `"²"`).
+- `subgrid_columns` : Nombre de sous-colonnes (défaut : `3`).
+- `subgrid_rows` : Nombre de sous-lignes (défaut : `3`).
+- `subgrid_exit_after_jump` : Si `true`, quitte automatiquement la sous-grille après un saut (défaut : `false`).
+

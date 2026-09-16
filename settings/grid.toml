@@ -11,12 +11,20 @@ columns = 3
 rows = 3
 
 # Mode dans lequel les raccourcis de la grille sont actifs
-# Ex: "grid", "special", ou "all"
-active_modes = ["special", "grid"]
+# Ex: "grid", "special", "subgrid", ou "all"
+active_modes = ["special", "grid", "subgrid"]
 
 # Comportement après le saut vers une case
 exit_mode_after_jump = false       # Si true, repasse en mode normal après le saut
 auto_click = false                 # Si true, effectue un clic gauche au centre de la case
+
+# Configuration de la sous-grille (Subgrid)
+# Permet de subdiviser la case courante en 3x3 avec les mêmes touches de cases
+subgrid_enabled = true
+subgrid_toggle_key = "²"           # Touche toggle pour basculer vers/depuis le mode sous-grille
+subgrid_columns = 3
+subgrid_rows = 3
+subgrid_exit_after_jump = false    # Si true, quitte le mode sous-grille après un saut
 
 # Rapprochement vers les bords de l'écran (Edge Snap)
 # Si le curseur est dans une case touchant un ou deux bords (coins ou côtés),

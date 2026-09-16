@@ -99,7 +99,28 @@ class KeyboardHookService:
             # 2. Vérification de la grille souris si le mode actif fait partie des active_modes
             grid_cfg = self.config_manager.grid_config
             if grid_cfg.enabled and (current_mode in grid_cfg.active_modes or "all" in grid_cfg.active_modes):
-                # 2a. Touche de rapprochement du bord (edge snap)
+                # 2a. Touche de bascule vers/depuis le mode sous-grille (subgrid toggle)
+                if self.grid_manager.is_subgrid_toggle_key(key_name):
+                    logger.debug("Touche toggle sous-grille détectée : '%s'", key_name)
+                    threading.Thread(
+                        target=self._execute_subgrid_toggle,
+                        args=(key_name, current_mode),
+                        daemon=True
+                    ).start()
+                    return False
+
+                # 2b. Touche de cellule en mode sous-grille (réutilise les mêmes touches de cases)
+                if current_mode == "subgrid" or self.grid_manager.is_subgrid_active:
+                    if self.grid_manager.is_grid_key(key_name):
+                        logger.debug("Touche sous-grille détectée : '%s'", key_name)
+                        threading.Thread(
+                            target=self._execute_subgrid_jump,
+                            args=(key_name, current_mode),
+                            daemon=True
+                        ).start()
+                        return False
+
+                # 2c. Touche de rapprochement du bord (edge snap)
                 if self.grid_manager.is_edge_snap_key(key_name):
                     logger.debug("Touche de rapprochement bord grille détectée : '%s'", key_name)
                     threading.Thread(
@@ -109,7 +130,7 @@ class KeyboardHookService:
                     ).start()
                     return False
 
-                # 2b. Touche de cellule de grille
+                # 2d. Touche de cellule de grille standard
                 if self.grid_manager.is_grid_key(key_name):
                     logger.debug("Touche de grille détectée : '%s'", key_name)
                     # Exécuter dans un thread séparé pour ne pas ralentir le hook système
@@ -138,6 +159,39 @@ class KeyboardHookService:
             logger.error("Erreur critique dans le hook clavier : %s", err, exc_info=True)
             # En cas d'erreur, ne jamais bloquer le clavier de l'utilisateur
             return True
+
+    def _execute_subgrid_toggle(self, key_name: str, current_mode: str) -> None:
+        """Exécute la bascule sous-grille en arrière-plan."""
+        try:
+            is_active = self.grid_manager.toggle_subgrid()
+            new_mode = self.state_manager.current_mode
+            origin = self.grid_manager.subgrid_origin_cell
+            self.state_manager.add_log(
+                action_name=f"Toggle Sous-Grille ({'Actif' if is_active else 'Inactif'})",
+                trigger_key=key_name,
+                mode=current_mode,
+                status="success",
+                details=f"Nouveau mode : {new_mode}" + (f" | Case parente : {origin}" if origin else ""),
+            )
+        except Exception as err:
+            logger.error("Erreur lors de la bascule sous-grille pour la touche '%s': %s", key_name, err, exc_info=True)
+
+    def _execute_subgrid_jump(self, key_name: str, current_mode: str) -> None:
+        """Exécute le saut de sous-grille en arrière-plan."""
+        try:
+            coords = self.grid_manager.jump_subcell_by_key(key_name)
+            if coords:
+                cx, cy = coords
+                origin = self.grid_manager.subgrid_origin_cell or (0, 0)
+                self.state_manager.add_log(
+                    action_name=f"Saut Sous-Grille ({cx}, {cy})",
+                    trigger_key=key_name,
+                    mode=current_mode,
+                    status="success",
+                    details=f"Case parente : {origin}",
+                )
+        except Exception as err:
+            logger.error("Erreur lors du saut de sous-grille pour la touche '%s': %s", key_name, err, exc_info=True)
 
     def _execute_grid_edge_snap(self, key_name: str, current_mode: str) -> None:
         """Exécute le rapprochement vers le bord de l'écran en arrière-plan."""

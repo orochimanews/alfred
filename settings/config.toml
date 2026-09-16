@@ -36,3 +36,7 @@ description = "Mode Alfred (les touches interceptées déclenchent des actions e
 [modes.grid]
 name = "Grille"
 description = "Mode grille (déplacement rapide du curseur souris par zone d'écran)."
+
+[modes.subgrid]
+name = "Sous-grille"
+description = "Mode sous-grille (division 3x3 de la case courante pour un ciblage ultra précis)."

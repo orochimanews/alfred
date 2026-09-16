@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from src.alfred.core.models import GridConfig
 from src.alfred.core.mouse import mouse
@@ -19,6 +19,19 @@ class GridManager:
     def __init__(self, config: GridConfig, state_manager: StateManager | None = None) -> None:
         self.config = config
         self.state_manager = state_manager
+        self.is_subgrid_active: bool = False
+        self.subgrid_origin_cell: tuple[int, int] | None = None
+        self.last_jumped_cell: tuple[int, int] | None = None
+
+        if self.state_manager:
+            self.state_manager.subscribe(self._on_state_change)
+
+    def _on_state_change(self, event_type: str, data: Any) -> None:
+        """Réinitialise l'état sous-grille si l'on quitte le mode sous-grille."""
+        if event_type == "mode_changed":
+            if data != "subgrid" and self.is_subgrid_active:
+                self.is_subgrid_active = False
+                self.subgrid_origin_cell = None
 
     def update_config(self, new_config: GridConfig) -> None:
         """Met à jour la configuration de la grille."""
@@ -43,8 +56,43 @@ class GridManager:
 
         return (center_x, center_y)
 
+    def get_subcell_center(
+        self,
+        parent_col: int,
+        parent_row: int,
+        sub_col: int,
+        sub_row: int,
+        screen_width: int | None = None,
+        screen_height: int | None = None,
+    ) -> tuple[int, int]:
+        """Calcule les coordonnées (x, y) du centre de la sous-case (sub_col, sub_row)
+        au sein de la case parente (parent_col, parent_row).
+        """
+        if screen_width is None or screen_height is None:
+            screen_width, screen_height = mouse.get_screen_size()
+
+        cols = max(1, self.config.columns)
+        rows = max(1, self.config.rows)
+        sub_cols = max(1, self.config.subgrid_columns)
+        sub_rows = max(1, self.config.subgrid_rows)
+
+        parent_col = max(0, min(cols - 1, parent_col))
+        parent_row = max(0, min(rows - 1, parent_row))
+        sub_col = max(0, min(sub_cols - 1, sub_col))
+        sub_row = max(0, min(sub_rows - 1, sub_row))
+
+        cell_w = screen_width / cols
+        cell_h = screen_height / rows
+
+        center_x = int((parent_col + (sub_col + 0.5) / sub_cols) * cell_w)
+        center_y = int((parent_row + (sub_row + 0.5) / sub_rows) * cell_h)
+
+        return (center_x, center_y)
+
     def jump_to_cell(self, col: int, row: int) -> tuple[int, int]:
         """Déplace le curseur au centre de la case et effectue les actions associées."""
+        self.last_jumped_cell = (col, row)
+        self.subgrid_origin_cell = (col, row)
         cx, cy = self.get_cell_center(col, row)
         mouse.set_position(cx, cy)
         logger.info("Grille : Saut à la case [%d, %d] -> coordonnées (%d, %d)", col, row, cx, cy)
@@ -56,6 +104,81 @@ class GridManager:
             self.state_manager.set_mode(self.state_manager.previous_mode or "normal")
 
         return (cx, cy)
+
+    def jump_to_subcell(self, sub_col: int, sub_row: int) -> tuple[int, int]:
+        """Déplace le curseur au centre de la sous-case spécifiée."""
+        if self.subgrid_origin_cell is None:
+            cur_x, cur_y = mouse.get_position()
+            self.subgrid_origin_cell = self.get_cell_at_position(cur_x, cur_y)
+
+        p_col, p_row = self.subgrid_origin_cell
+        cx, cy = self.get_subcell_center(p_col, p_row, sub_col, sub_row)
+        mouse.set_position(cx, cy)
+        logger.info(
+            "Sous-grille : Saut à la sous-case [%d, %d] de la case parente [%d, %d] -> (%d, %d)",
+            sub_col, sub_row, p_col, p_row, cx, cy
+        )
+
+        if self.config.auto_click:
+            mouse.click("left")
+
+        if self.config.subgrid_exit_after_jump:
+            self.toggle_subgrid()
+
+        return (cx, cy)
+
+    def jump_subcell_by_key(self, key_name: str) -> tuple[int, int] | None:
+        """Si la touche correspond à une case configurée, saute sur la sous-case correspondante."""
+        clean_key = key_name.lower().strip()
+        coords = self.config.cells.get(clean_key)
+        if coords is not None:
+            sub_col, sub_row = coords
+            return self.jump_to_subcell(sub_col, sub_row)
+        return None
+
+    def is_subgrid_toggle_key(self, key_name: str) -> bool:
+        """Indique si la touche bascule vers ou depuis le mode sous-grille."""
+        if not self.config.subgrid_enabled:
+            return False
+        return key_name.lower().strip() in self.config.subgrid_toggle_keys
+
+    def toggle_subgrid(self) -> bool:
+        """Bascule l'état du mode sous-grille.
+
+        Retourne True si la sous-grille est désormais active, False sinon.
+        """
+        if not self.config.subgrid_enabled:
+            return False
+
+        if not self.is_subgrid_active:
+            cur_x, cur_y = mouse.get_position()
+            self.subgrid_origin_cell = self.get_cell_at_position(cur_x, cur_y)
+            self.is_subgrid_active = True
+            logger.info("Sous-grille activée pour la case [%d, %d]", self.subgrid_origin_cell[0], self.subgrid_origin_cell[1])
+            if self.state_manager:
+                self.state_manager.set_mode("subgrid")
+            return True
+        else:
+            self.is_subgrid_active = False
+            self.subgrid_origin_cell = None
+            logger.info("Sous-grille désactivée -> Retour au mode grille")
+            if self.state_manager:
+                prev = self.state_manager.previous_mode
+                target = "grid" if (not prev or prev in ("grid", "subgrid", "normal")) else prev
+                self.state_manager.set_mode(target or "grid")
+            return False
+
+    def set_subgrid_active(self, active: bool, origin_cell: tuple[int, int] | None = None) -> None:
+        """Active ou désactive manuellement le mode sous-grille."""
+        self.is_subgrid_active = active
+        if active:
+            if origin_cell is not None:
+                self.subgrid_origin_cell = origin_cell
+            elif self.subgrid_origin_cell is None:
+                cur_x, cur_y = mouse.get_position()
+                self.subgrid_origin_cell = self.get_cell_at_position(cur_x, cur_y)
+        else:
+            self.subgrid_origin_cell = None
 
     def jump_by_key(self, key_name: str) -> tuple[int, int] | None:
         """Si la touche correspond à une case configurée, saute sur cette case."""

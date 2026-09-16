@@ -111,6 +111,12 @@ class CommandsEngine:
                 col = int(params.get("col", 0))
                 row = int(params.get("row", 0))
                 self.grid_manager.jump_to_cell(col, row)
+            case "subgrid_cell":
+                col = int(params.get("col", 0))
+                row = int(params.get("row", 0))
+                self.grid_manager.jump_to_subcell(col, row)
+            case "subgrid":
+                self._cmd_subgrid(params)
             case "edge_snap" | "grid_edge_snap":
                 raw_off = params.get("offset", params.get("steps", params.get("distance", None)))
                 offset = int(raw_off) if raw_off is not None else None
@@ -125,6 +131,21 @@ class CommandsEngine:
                 self._cmd_zoom(params)
             case _:
                 logger.warning("Commande de type inconnu ignorée : '%s'", cmd_type)
+
+    def _cmd_subgrid(self, params: dict) -> None:
+        toggle = bool(params.get("toggle", True))
+        active = params.get("active")
+        if active is not None:
+            self.grid_manager.set_subgrid_active(bool(active))
+            if bool(active):
+                self.state_manager.set_mode("subgrid")
+            else:
+                prev = self.state_manager.previous_mode
+                self.state_manager.set_mode(prev if prev in ("grid", "special") else "grid")
+        elif toggle:
+            self.grid_manager.toggle_subgrid()
+        else:
+            self.grid_manager.toggle_subgrid()
 
     def _cmd_hotkey(self, params: dict) -> None:
         keys = params.get("keys")

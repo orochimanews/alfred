@@ -325,6 +325,24 @@ def test_mouse_controller_nudge_lifecycle():
         controller.stop_nudge_mode()
 
 
+def test_command_engine_subgrid():
+    state = StateManager(initial_mode="grid")
+    cfg_mgr = ConfigManager()
+    grid_mgr = MagicMock()
+    engine = CommandsEngine(state, grid_mgr, cfg_mgr)
+
+    # Commande subgrid toggle
+    cmd_toggle = Command(type="subgrid", params={"toggle": True})
+    engine.execute_command(cmd_toggle)
+    grid_mgr.toggle_subgrid.assert_called_once()
+
+    # Commande subgrid_cell
+    cmd_cell = Command(type="subgrid_cell", params={"col": 1, "row": 2})
+    engine.execute_command(cmd_cell)
+    grid_mgr.jump_to_subcell.assert_called_once_with(1, 2)
+
+
+
 
 
 
