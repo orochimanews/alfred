@@ -87,3 +87,48 @@ def test_alfred_app_dynamic_close_binding_and_execution():
                 app.destroy()
             except Exception:
                 pass
+
+
+def test_alfred_app_minimize_and_restore_tray():
+    config_mgr = ConfigManager()
+    config_mgr.load_all()
+    state_mgr = StateManager(initial_mode="normal")
+    grid_mgr = GridManager(config=config_mgr.grid_config, state_manager=state_mgr)
+    commands_engine = CommandsEngine(
+        state_manager=state_mgr,
+        grid_manager=grid_mgr,
+        config_manager=config_mgr,
+    )
+    hook_service = MagicMock()
+
+    with patch("pystray.Icon"):
+        app = AlfredApp(
+            config_manager=config_mgr,
+            state_manager=state_mgr,
+            commands_engine=commands_engine,
+            grid_manager=grid_mgr,
+            hook_service=hook_service,
+        )
+        try:
+            assert hasattr(app, "btn_minimize_tray")
+            assert app.btn_minimize_tray.cget("text") == "📥"
+
+            # Test minimize to tray
+            with patch.object(app, "withdraw") as mock_withdraw:
+                app.minimize_to_tray()
+                mock_withdraw.assert_called_once()
+
+            # Test restore from tray
+            with patch.object(app, "deiconify") as mock_deiconify, \
+                 patch.object(app, "lift") as mock_lift, \
+                 patch.object(app, "focus_force") as mock_focus:
+                app.restore_from_tray()
+                mock_deiconify.assert_called_once()
+                mock_lift.assert_called_once()
+                mock_focus.assert_called_once()
+        finally:
+            try:
+                app.close()
+            except Exception:
+                pass
+

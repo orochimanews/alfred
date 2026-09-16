@@ -6,6 +6,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from src.alfred.ui.theme import ThemeManager
+from src.alfred.ui.tray import TrayIconService, ToolTip
 from src.alfred.ui.views.dashboard import DashboardView
 from src.alfred.ui.views.actions_view import ActionsView
 from src.alfred.ui.views.grid_view import GridView
@@ -90,6 +91,17 @@ class AlfredApp(ctk.CTk):
         # Souscription aux changements d'état
         self.state_manager.subscribe(self._on_state_event)
 
+        # Service de zone de notification (System Tray)
+        self.tray_service = TrayIconService(
+            on_restore=lambda: self.after(0, self.restore_from_tray),
+            on_quit=lambda: self.after(0, self.close),
+            on_toggle_mode=lambda: self.after(0, self._on_header_mode_clicked),
+            on_toggle_hook=lambda: self.after(0, self._on_toggle_hook_clicked),
+            initial_mode=self.state_manager.current_mode,
+            is_hook_enabled=self.state_manager.is_hook_enabled,
+        )
+        self.tray_service.start()
+
         # Raccourci clavier dynamique de fermeture quand l'application a le focus
         self._close_bound_sequences: list[str] = []
         self._update_close_shortcut_binding()
@@ -103,6 +115,10 @@ class AlfredApp(ctk.CTk):
 
         # Afficher la vue par défaut (Dashboard)
         self._switch_view("dashboard")
+
+        # Réduction initiale dans le tray si configurée
+        if getattr(self.config_manager.app_config.ui, "start_minimized", False):
+            self.after(50, self.minimize_to_tray)
 
     def _update_close_shortcut_binding(self) -> None:
         """Met à jour les raccourcis clavier de fermeture selon config.toml [general].close."""
@@ -124,9 +140,25 @@ class AlfredApp(ctk.CTk):
             self._close_bound_sequences.append(seq)
         logger.debug("Raccourci de fermeture '%s' activé sur %s", close_shortcut, sequences)
 
+    def minimize_to_tray(self) -> None:
+        """Réduit la fenêtre dans la zone de notification Windows (systray)."""
+        logger.info("Réduction d'Alfred dans la zone de notification...")
+        self.withdraw()
+
+    def restore_from_tray(self) -> None:
+        """Restaure et affiche la fenêtre Alfred au premier plan."""
+        logger.info("Restauration d'Alfred depuis la zone de notification...")
+        self.deiconify()
+        self.lift()
+        self.focus_force()
+        if self.config_manager.app_config.ui.always_on_top:
+            self.attributes("-topmost", True)
+
     def close(self, event: any = None) -> None:
-        """Ferme proprement l'application Alfred (arrêt du hook, restauration de la souris, destruction)."""
+        """Ferme proprement l'application Alfred (arrêt du tray, arrêt du hook, restauration souris, destruction)."""
         logger.info("Fermeture de l'application Alfred...")
+        if hasattr(self, "tray_service") and self.tray_service:
+            self.tray_service.stop()
         if hasattr(self, "hook_service") and self.hook_service:
             self.hook_service.stop()
         from src.alfred.core.mouse import mouse
@@ -243,6 +275,21 @@ class AlfredApp(ctk.CTk):
             command=self._open_settings_modal
         )
         btn_settings.pack(side="left", padx=2)
+        ToolTip(btn_settings, "Paramètres d'Alfred")
+
+        # Bouton Réduire dans la zone de notification (Tray)
+        self.btn_minimize_tray = ctk.CTkButton(
+            right_box,
+            text="📥",
+            width=34,
+            height=28,
+            font=self.theme_manager.get_font(size_offset=0),
+            fg_color="transparent",
+            border_width=1,
+            command=self.minimize_to_tray
+        )
+        self.btn_minimize_tray.pack(side="left", padx=2)
+        ToolTip(self.btn_minimize_tray, "Réduire dans la zone de notification (Systray)")
 
     def _build_content_area(self) -> None:
         """Construit les différentes vues interchangeables."""
@@ -323,11 +370,15 @@ class AlfredApp(ctk.CTk):
         match event_type:
             case "mode_changed":
                 self._update_header_mode_badge()
+                if hasattr(self, "tray_service") and self.tray_service:
+                    self.tray_service.update_mode(self.state_manager.current_mode)
                 dash = self.views.get("dashboard")
                 if isinstance(dash, DashboardView):
                     dash.refresh()
             case "hook_state_changed":
                 self._update_hook_button()
+                if hasattr(self, "tray_service") and self.tray_service:
+                    self.tray_service.update_hook_state(self.state_manager.is_hook_enabled)
             case "log_added" | "logs_cleared":
                 dash = self.views.get("dashboard")
                 if isinstance(dash, DashboardView):

@@ -11,6 +11,8 @@ echo [2/3] Compilation avec PyInstaller...
 uv run pyinstaller --noconfirm --onedir --windowed ^
     --name "Alfred" ^
     --collect-all customtkinter ^
+    --collect-all pystray ^
+    --collect-all PIL ^
     --hidden-import "src.alfred.core" ^
     --hidden-import "src.alfred.ui" ^
     main.py

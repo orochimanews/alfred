@@ -240,7 +240,7 @@ class SettingsModal(ctk.CTkToplevel):
 
         # Always on top
         row_top = ctk.CTkFrame(sec_ui, fg_color="transparent")
-        row_top.pack(fill="x", padx=12, pady=(4, 10))
+        row_top.pack(fill="x", padx=12, pady=4)
         self.switch_always_top = ctk.CTkSwitch(
             row_top,
             text="Toujours au premier plan (Always on Top)",
@@ -251,6 +251,20 @@ class SettingsModal(ctk.CTkToplevel):
         else:
             self.switch_always_top.deselect()
         self.switch_always_top.pack(anchor="w")
+
+        # Démarrer réduit dans la zone de notification
+        row_min = ctk.CTkFrame(sec_ui, fg_color="transparent")
+        row_min.pack(fill="x", padx=12, pady=(4, 10))
+        self.switch_start_minimized = ctk.CTkSwitch(
+            row_min,
+            text="Démarrer réduit dans la zone de notification",
+            font=self.theme_manager.get_font(size_offset=-1)
+        )
+        if getattr(cfg.ui, "start_minimized", False):
+            self.switch_start_minimized.select()
+        else:
+            self.switch_start_minimized.deselect()
+        self.switch_start_minimized.pack(anchor="w")
 
         # --- Boutons d'Action Inférieurs ---
         btn_bar = ctk.CTkFrame(container, fg_color="transparent")
@@ -308,6 +322,7 @@ class SettingsModal(ctk.CTkToplevel):
         new_theme = theme_map.get(self.seg_theme.get(), "dark")
         new_font_size = int(self.slider_font.get())
         new_always_top = bool(self.switch_always_top.get())
+        new_start_minimized = bool(self.switch_start_minimized.get())
 
         # Affectation
         cfg.general.special_mode_key = new_key
@@ -324,6 +339,7 @@ class SettingsModal(ctk.CTkToplevel):
         cfg.ui.theme = new_theme
         cfg.ui.font_size = new_font_size
         cfg.ui.always_on_top = new_always_top
+        cfg.ui.start_minimized = new_start_minimized
 
         # Sauvegarde sur le disque
         self.config_manager.save_app_config()
