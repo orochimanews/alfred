@@ -218,6 +218,42 @@ class CommandsEngine:
                     if os.path.isfile(p):
                         target = p
                         break
+            elif target.lower() in ("vscode", "code", "code.exe"):
+                for p in [
+                    r"C:\programs\Microsoft VS Code\Code.exe",
+                    os.path.expandvars(r"%LOCALAPPDATA%\Programs\Microsoft VS Code\Code.exe"),
+                    os.path.expandvars(r"%ProgramFiles%\Microsoft VS Code\Code.exe"),
+                ]:
+                    if os.path.isfile(p):
+                        target = p
+                        break
+            elif target.lower() in ("vlc", "vlc.exe"):
+                for p in [
+                    r"C:\programs\VideoLAN\VLC\vlc.exe",
+                    os.path.expandvars(r"%ProgramFiles%\VideoLAN\VLC\vlc.exe"),
+                    os.path.expandvars(r"%ProgramFiles(x86)%\VideoLAN\VLC\vlc.exe"),
+                ]:
+                    if os.path.isfile(p):
+                        target = p
+                        break
+            elif target.lower() in ("firefox", "firefox.exe"):
+                for p in [
+                    os.path.expandvars(r"%ProgramFiles%\Mozilla Firefox\firefox.exe"),
+                    os.path.expandvars(r"%ProgramFiles(x86)%\Mozilla Firefox\firefox.exe"),
+                    os.path.expandvars(r"%LOCALAPPDATA%\Mozilla Firefox\firefox.exe"),
+                ]:
+                    if os.path.isfile(p):
+                        target = p
+                        break
+            elif target.lower() in ("brave", "brave.exe", "brave-browser"):
+                for p in [
+                    os.path.expandvars(r"%ProgramFiles%\BraveSoftware\Brave-Browser\Application\brave.exe"),
+                    os.path.expandvars(r"%ProgramFiles(x86)%\BraveSoftware\Brave-Browser\Application\brave.exe"),
+                    os.path.expandvars(r"%LOCALAPPDATA%\BraveSoftware\Brave-Browser\Application\brave.exe"),
+                ]:
+                    if os.path.isfile(p):
+                        target = p
+                        break
 
             # 0. Vérifier si l'application possède déjà une fenêtre ouverte à réactiver
             if reuse_existing:

@@ -33,3 +33,40 @@ trigger = "e"
 commands = [
     { type = "app", params = ["explorer"] }
 ]
+
+[[actions]]
+name = "Lancer Mozilla Firefox"
+description = "Ouvre ou affiche le navigateur Mozilla Firefox"
+modes = ["special"]
+trigger = "f"
+commands = [
+    { type = "app", params = ["C:\\Program Files\\Mozilla Firefox\\firefox.exe"] }
+]
+
+[[actions]]
+name = "Lancer Brave Browser"
+description = "Ouvre ou affiche le navigateur Brave"
+modes = ["special"]
+trigger = "r"
+commands = [
+    { type = "app", params = ["C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe"] }
+]
+
+[[actions]]
+name = "Lancer Visual Studio Code"
+description = "Ouvre ou affiche Visual Studio Code"
+modes = ["special"]
+trigger = "q"
+commands = [
+    { type = "app", params = ["C:\\programs\\Microsoft VS Code\\Code.exe"] }
+]
+
+[[actions]]
+name = "Lancer VLC Media Player"
+description = "Ouvre ou affiche VLC Media Player"
+modes = ["special"]
+trigger = "l"
+commands = [
+    { type = "app", params = ["C:\\programs\\VideoLAN\\VLC\\vlc.exe"] }
+]
+
