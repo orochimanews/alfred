@@ -1,0 +1,36 @@
+
+[[actions]]
+name = "Début"
+description = "Début de page / document (Ctrl + Home)"
+modes = ["special"]
+trigger = "h"
+commands = [
+    { type = "hotkey", params = ["ctrl", "home"] }
+]
+
+[[actions]]
+name = "Fin"
+description = "Fin de page / document (Ctrl + End)"
+modes = ["special"]
+trigger = "p"
+commands = [
+    { type = "hotkey", params = ["ctrl", "end"] }
+]
+
+[[actions]]
+name = "Zoom Avant"
+description = "Agrandit le zoom de l'affichage"
+modes = ["special"]
+trigger = "="
+commands = [
+    { type = "zoom", direction = "in" }
+]
+
+[[actions]]
+name = "Zoom Arrière"
+description = "Réduit le zoom de l'affichage"
+modes = ["special"]
+trigger = ')'
+commands = [
+    { type = "zoom", direction = "out" }
+]
