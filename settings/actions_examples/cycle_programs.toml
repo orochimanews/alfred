@@ -1,0 +1,74 @@
+# ==============================================================================
+# EXEMPLES D'ACTIONS : DÉFILEMENT & CHANGEMENT DE PROGRAMMES
+# ==============================================================================
+# Emplacement : settings/actions_examples/cycle_programs.toml
+#
+# NOTE : Ce fichier se trouve dans le dossier d'exemples ('actions_examples').
+# Il n'est PAS chargé par Alfred et n'a aucun impact direct.
+# Pour activer une ou plusieurs de ces actions, copiez le bloc souhaité
+# dans votre fichier 'settings/actions/hotkeys.toml' (ou dans un nouveau fichier .toml
+# dans 'settings/actions/').
+#
+# ------------------------------------------------------------------------------
+# EXPLICATION : Pourquoi Alt+Tab classique ne fait que basculer entre 2 programmes ?
+# ------------------------------------------------------------------------------
+# Dans Windows, envoyer "Alt+Tab" d'un coup (appui puis relâchement immédiat)
+# bascule toujours vers le dernier programme actif. Si on ré-appuie, cela revient
+# au premier programme, ce qui crée une boucle infinie entre seulement 2 fenêtres.
+#
+# Voici les 3 meilleures solutions natives sous Windows pour faire défiler TOUTES les fenêtres :
+#
+# 1) "alt + esc" : Défilement séquentiel direct (Recommandé pour un défilement rapide)
+#    À chaque pression, Windows passe directement au programme suivant (1 -> 2 -> 3 -> 4...)
+#    sans afficher la boîte de dialogue Alt+Tab.
+#
+# 2) "alt + shift + esc" : Même chose mais en sens inverse (programme précédent).
+#
+# 3) "ctrl + alt + tab" : Sélecteur Alt+Tab persistant
+#    Ouvre la boîte de dialogue avec toutes les miniatures et la laisse OUVERTE à l'écran
+#    même après avoir relâché les touches. Vous pouvez ensuite utiliser Tab ou les flèches
+#    pour naviguer librement dans tous vos programmes, puis appuyer sur Entrée pour choisir.
+#
+# 4) "win + tab" : Vue des tâches Windows
+#    Ouvre l'aperçu global sous forme de mosaïque plein écran.
+# ==============================================================================
+
+# Option 1 : Défiler vers le programme suivant (Alt + Esc)
+[[actions]]
+name = "Défiler Programme Suivant"
+description = "Passe au programme suivant dans l'ordre des fenêtres (1 -> 2 -> 3...)"
+modes = ["special"]
+trigger = "tab"
+commands = [
+    { type = "hotkey", params = ["alt", "esc"] }
+]
+
+# Option 2 : Défiler vers le programme précédent (Alt + Shift + Esc)
+[[actions]]
+name = "Défiler Programme Précédent"
+description = "Passe au programme précédent en sens inverse"
+modes = ["special"]
+trigger = "a"
+commands = [
+    { type = "hotkey", params = ["alt", "shift", "esc"] }
+]
+
+# Option 3 : Ouvrir le sélecteur Alt+Tab persistant (reste affiché à l'écran)
+[[actions]]
+name = "Sélecteur de Programmes Persistant"
+description = "Ouvre le volet Alt-Tab persistant (naviguez ensuite aux flèches ou Tab)"
+modes = ["special"]
+trigger = "p"
+commands = [
+    { type = "hotkey", params = ["ctrl", "alt", "tab"] }
+]
+
+# Option 4 : Vue des tâches Windows (Mosaïque plein écran)
+[[actions]]
+name = "Vue des Tâches Windows"
+description = "Affiche la mosaïque de toutes les fenêtres ouvertes (Win+Tab)"
+modes = ["special"]
+trigger = "v"
+commands = [
+    { type = "hotkey", params = ["win", "tab"] }
+]

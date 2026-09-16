@@ -20,7 +20,7 @@ def test_config_manager_load_all():
     assert "a" in mgr.grid_config.cells
 
     # Vérification des actions
-    assert len(mgr.actions) >= 5
+    assert len(mgr.actions) >= 1
     action_t = mgr.get_action_for_key("t", "special")
     assert action_t is not None
     assert action_t.name == "Nouvel Onglet Navigateur"

@@ -121,4 +121,6 @@ Le projet s'appuie sur `uv` pour la gestion des paquets et l'exécution :
 1. **Privilégier la modularité** : Ne jamais intégrer du code d'interception système directement dans les widgets UI.
 2. **Robustesse du Hook** : L'interception clavier ne doit pas bloquer le système en cas d'exception dans une commande. Toujours exécuter les actions de façon asynchrone dans un thread worker.
 3. **Persistance TOML** : Toute modification effectuée dans la fenêtre des paramètres doit être enregistrée dans `settings/config.toml` sans corrompre les autres sections.
-4. **Mises à jour Git** : Créer un commit à chaque jalon significatif.
+4. **Protection absolue des actions utilisateur (`settings/actions/`)** : Ne **JAMAIS** modifier, éditer ou supprimer les fichiers `.toml` situés dans le dossier `settings/actions/`, sauf demande explicite et univoque de l'utilisateur. Pour suggérer ou présenter de nouvelles actions ou des exemples, toujours créer des fichiers dans `settings/actions_examples/` (qui ne sont pas chargés par l'application et n'ont aucun effet indésirable).
+5. **Mises à jour Git** : Créer un commit à chaque jalon significatif.
+
