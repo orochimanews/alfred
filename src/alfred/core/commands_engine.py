@@ -109,6 +109,10 @@ class CommandsEngine:
                 col = int(params.get("col", 0))
                 row = int(params.get("row", 0))
                 self.grid_manager.jump_to_cell(col, row)
+            case "edge_snap" | "grid_edge_snap":
+                raw_off = params.get("offset", params.get("steps", params.get("distance", None)))
+                offset = int(raw_off) if raw_off is not None else None
+                self.grid_manager.snap_to_edge(offset=offset)
             case _:
                 logger.warning("Commande de type inconnu ignorée : '%s'", cmd_type)
 

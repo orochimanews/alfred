@@ -43,18 +43,31 @@ class GridView(ctk.CTkFrame):
 
         lbl_info = ctk.CTkLabel(
             bar,
-            text=f"Résolution Écran : {w} x {h} px  |  Grille : {cfg.columns} col x {cfg.rows} lig",
+            text=f"Résolution : {w}x{h} px  |  Grille : {cfg.columns}x{cfg.rows}  |  Bord : [{cfg.edge_snap_key}] ({cfg.edge_offset} px)",
             font=self.theme_manager.get_font(size_offset=-1, weight="bold")
         )
         lbl_info.grid(row=0, column=0, sticky="w")
 
+        right_panel = ctk.CTkFrame(bar, fg_color="transparent")
+        right_panel.grid(row=0, column=1, sticky="e")
+
+        btn_snap_edge = ctk.CTkButton(
+            right_panel,
+            text=f"Tester Bord [{cfg.edge_snap_key}]",
+            font=self.theme_manager.get_font(size_offset=-2),
+            height=26,
+            width=110,
+            command=lambda: threading.Thread(target=self.grid_manager.snap_to_edge, daemon=True).start()
+        )
+        btn_snap_edge.pack(side="right", padx=(8, 0))
+
         lbl_hint = ctk.CTkLabel(
-            bar,
-            text="Cliquez sur une case pour tester le saut du curseur",
+            right_panel,
+            text="Cliquez sur une case pour tester",
             font=self.theme_manager.get_font(size_offset=-2),
             text_color="gray"
         )
-        lbl_hint.grid(row=0, column=1, sticky="e")
+        lbl_hint.pack(side="right")
 
     def _build_matrix_display(self) -> None:
         """Construit la représentation visuelle en grille des cases."""

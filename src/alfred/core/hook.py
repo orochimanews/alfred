@@ -78,8 +78,8 @@ class KeyboardHookService:
             gen_cfg = self.config_manager.app_config.general
             special_key = gen_cfg.special_mode_key.lower().strip()
 
-            # 1. Vérification de la touche de bascule vers le mode spécial
-            if key_name == special_key and not is_repeat:
+            # 1. Vérification de la touche de bascule vers le mode spécial (si configurée en dur)
+            if special_key and key_name == special_key and not is_repeat:
                 logger.debug("Touche de mode spécial détectée : '%s'", key_name)
                 if gen_cfg.toggle_special_mode:
                     new_mode = self.state_manager.toggle_mode(gen_cfg.special_mode_name)
@@ -99,6 +99,17 @@ class KeyboardHookService:
             # 2. Vérification de la grille souris si le mode actif fait partie des active_modes
             grid_cfg = self.config_manager.grid_config
             if grid_cfg.enabled and (current_mode in grid_cfg.active_modes or "all" in grid_cfg.active_modes):
+                # 2a. Touche de rapprochement du bord (edge snap)
+                if self.grid_manager.is_edge_snap_key(key_name):
+                    logger.debug("Touche de rapprochement bord grille détectée : '%s'", key_name)
+                    threading.Thread(
+                        target=self._execute_grid_edge_snap,
+                        args=(key_name, current_mode),
+                        daemon=True
+                    ).start()
+                    return False
+
+                # 2b. Touche de cellule de grille
                 if self.grid_manager.is_grid_key(key_name):
                     logger.debug("Touche de grille détectée : '%s'", key_name)
                     # Exécuter dans un thread séparé pour ne pas ralentir le hook système
@@ -127,6 +138,28 @@ class KeyboardHookService:
             logger.error("Erreur critique dans le hook clavier : %s", err, exc_info=True)
             # En cas d'erreur, ne jamais bloquer le clavier de l'utilisateur
             return True
+
+    def _execute_grid_edge_snap(self, key_name: str, current_mode: str) -> None:
+        """Exécute le rapprochement vers le bord de l'écran en arrière-plan."""
+        try:
+            coords = self.grid_manager.snap_to_edge()
+            if coords:
+                nx, ny = coords
+                self.state_manager.add_log(
+                    action_name=f"Bord Grille ({nx}, {ny})",
+                    trigger_key=key_name,
+                    mode=current_mode,
+                    status="success",
+                )
+            else:
+                self.state_manager.add_log(
+                    action_name="Bord Grille (hors bord)",
+                    trigger_key=key_name,
+                    mode=current_mode,
+                    status="ignored",
+                )
+        except Exception as err:
+            logger.error("Erreur lors du rapprochement vers le bord pour la touche '%s': %s", key_name, err)
 
     def _execute_grid_jump(self, key_name: str, current_mode: str) -> None:
         """Exécute le saut de grille en arrière-plan."""

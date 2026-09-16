@@ -39,3 +39,18 @@ w = [0, 2] # Bas-gauche
 x = [1, 2] # Bas-milieu
 c = [2, 2] # Bas-droite
 ```
+
+## 3. Rapprochement vers les Bords (Edge Snap)
+
+Une fonction paramétrable permet de rapprocher instantanément la souris très près du bord de l'écran en fonction de la cellule où se trouve actuellement le curseur :
+
+- **Paramètres** :
+  - `edge_snap_enabled` : Active ou désactive la fonction (défaut : `true`).
+  - `edge_snap_key` : Touche de déclenchement (défaut : `"à"`, gère automatiquement `"à"`, `"0"` et `"num_0"`).
+  - `edge_offset` (ou `steps`) : Distance en pixels par rapport au bord de l'écran (défaut : `10`).
+
+- **Comportement géométrique** :
+  - Si le curseur est dans une case touchant un coin (ex: `(0, 0)`), la souris saute à $(offset, offset)$ très près du coin haut-gauche.
+  - Si le curseur est sur un bord médian (ex: `(1, 0)` en haut au milieu), la coordonnée verticale est plaquée à $offset$ tout en conservant la position horizontale au milieu.
+  - Si le curseur est dans une case intérieure ne touchant aucun bord (ex: `(1, 1)` dans une grille 3x3), aucun déplacement n'est effectué.
+

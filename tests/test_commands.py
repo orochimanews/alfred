@@ -181,3 +181,15 @@ def test_command_engine_app_reuses_existing_window():
         mock_startfile.assert_not_called()
 
 
+def test_command_engine_edge_snap():
+    state = StateManager(initial_mode="special")
+    cfg_mgr = ConfigManager()
+    grid_mgr = MagicMock()
+    engine = CommandsEngine(state, grid_mgr, cfg_mgr)
+
+    cmd = Command(type="edge_snap", params={"offset": 20})
+    engine.execute_command(cmd)
+    grid_mgr.snap_to_edge.assert_called_once_with(offset=20)
+
+
+

@@ -66,6 +66,11 @@ def _normalize_params_from_list(cmd_type: str, items: list[Any]) -> dict[str, An
             if len(items) >= 2:
                 res["row"] = items[1]
             return res
+        case "edge_snap" | "grid_edge_snap":
+            res = {}
+            if len(items) >= 1:
+                res["offset"] = items[0]
+            return res
         case _:
             return {"args": items}
 
@@ -183,7 +188,11 @@ class GridConfig:
     active_modes: list[str] = field(default_factory=lambda: ["grid", "special"])
     exit_mode_after_jump: bool = False
     auto_click: bool = False
+    edge_snap_enabled: bool = True
+    edge_snap_key: str = "à"
+    edge_offset: int = 10
     cells: dict[str, tuple[int, int]] = field(default_factory=dict)
+    edge_snap_keys: set[str] = field(default_factory=set)
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> GridConfig:
@@ -208,6 +217,42 @@ class GridConfig:
 
         exit_mode = bool(grid_data.get("exit_mode_after_jump", False))
         auto_click = bool(grid_data.get("auto_click", False))
+
+        # Paramètres de rapprochement vers les bords (Edge Snap)
+        edge_snap_enabled = bool(grid_data.get("edge_snap_enabled", True))
+        raw_edge_key = grid_data.get("edge_snap_key", grid_data.get("edge_key", grid_data.get("snap_key", "à")))
+        if isinstance(raw_edge_key, list):
+            edge_snap_key = ", ".join(str(k) for k in raw_edge_key)
+            key_candidates = [str(k).lower().strip() for k in raw_edge_key]
+        else:
+            edge_snap_key = str(raw_edge_key).strip()
+            key_candidates = [k.lower().strip() for k in edge_snap_key.split(",") if k.strip()]
+
+        raw_offset = grid_data.get(
+            "edge_offset",
+            grid_data.get("steps", grid_data.get("edge_distance", grid_data.get("offset", 10)))
+        )
+        try:
+            edge_offset = max(0, int(raw_offset))
+        except (ValueError, TypeError):
+            edge_offset = 10
+
+        edge_snap_keys: set[str] = set()
+        for cand in key_candidates:
+            if not cand:
+                continue
+            edge_snap_keys.add(cand)
+            if cand in ("0", "num_0", "num 0", "à"):
+                edge_snap_keys.update(["0", "num_0", "num 0", "0 (pavé num.)", "0 (pave num.)", "à"])
+            elif cand.startswith("num_") or cand.startswith("num "):
+                digit = cand.replace("num_", "").replace("num ", "").strip()
+                edge_snap_keys.update([
+                    f"num_{digit}",
+                    f"num {digit}",
+                    f"{digit} (pave num.)",
+                    f"{digit} (pavé num.)",
+                    digit,
+                ])
 
         cells: dict[str, tuple[int, int]] = {}
         cells_data = data.get("cells", {})
@@ -238,8 +283,19 @@ class GridConfig:
             active_modes=active_modes,
             exit_mode_after_jump=exit_mode,
             auto_click=auto_click,
+            edge_snap_enabled=edge_snap_enabled,
+            edge_snap_key=edge_snap_key,
+            edge_offset=edge_offset,
             cells=cells,
+            edge_snap_keys=edge_snap_keys,
         )
+
+
+@dataclass
+class ModeConfig:
+    """Description et métadonnées d'un mode d'Alfred."""
+    name: str = ""
+    description: str = ""
 
 
 @dataclass
@@ -247,7 +303,8 @@ class GeneralConfig:
     """Configuration générale du système."""
     app_name: str = "Alfred"
     default_mode: str = "normal"
-    special_mode_key: str = "!"
+    close: str = "ctrl+w"
+    special_mode_key: str = ""
     special_mode_name: str = "special"
     toggle_special_mode: bool = True
 
@@ -273,5 +330,6 @@ class UIConfig:
 class AppConfig:
     """Configuration globale regroupée."""
     general: GeneralConfig = field(default_factory=GeneralConfig)
+    modes: dict[str, ModeConfig] = field(default_factory=dict)
     mouse: MouseConfig = field(default_factory=MouseConfig)
     ui: UIConfig = field(default_factory=UIConfig)

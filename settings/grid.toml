@@ -12,11 +12,18 @@ rows = 3
 
 # Mode dans lequel les raccourcis de la grille sont actifs
 # Ex: "grid", "special", ou "all"
-active_modes = ["grid"]
+active_modes = ["special", "grid"]
 
 # Comportement après le saut vers une case
 exit_mode_after_jump = false       # Si true, repasse en mode normal après le saut
 auto_click = false                 # Si true, effectue un clic gauche au centre de la case
+
+# Rapprochement vers les bords de l'écran (Edge Snap)
+# Si le curseur est dans une case touchant un ou deux bords (coins ou côtés),
+# presser cette touche plaque le curseur très proche du bord correspondant.
+edge_snap_enabled = true
+edge_snap_key = "à"                # Touche de rapprochement (ex: "à", "0", "num_0")
+edge_offset = 10                   # Distance en pixels par rapport au bord (alias 'steps = 10')
 
 # Mappage des touches vers les coordonnées de case [colonne, ligne] (indexé à 0)
 # Pour une grille 3x3 sur clavier AZERTY :
@@ -27,15 +34,15 @@ auto_click = false                 # Si true, effectue un clic gauche au centre 
 # Supporte également les touches du pavé numérique (num_7, num_8, etc.)
 
 [cells]
-a = [0, 0]
-z = [1, 0]
-e = [2, 0]
-q = [0, 1]
-s = [1, 1]
-d = [2, 1]
-w = [0, 2]
-x = [1, 2]
-c = [2, 2]
+"&" = [0, 0]
+"é" = [1, 0]
+'"' = [2, 0]
+"'" = [0, 1]
+'(' = [1, 1]
+"-" = [2, 1]
+"è" = [0, 2]
+"_" = [1, 2]
+"ç" = [2, 2]
 
 # Pavé numérique (optionnel alternatif)
 num_7 = [0, 0]
