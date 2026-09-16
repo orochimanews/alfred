@@ -141,7 +141,10 @@ class ConfigManager:
         return self.grid_config
 
     def load_actions(self) -> list[Action]:
-        """Scanne le répertoire settings/actions/ et charge toutes les actions TOML valides."""
+        """Scanne le répertoire settings/actions/ et charge toutes les actions TOML valides.
+        Supporte aussi bien une seule action par fichier que plusieurs actions
+        via la syntaxe standard [[actions]], [actions.nom], ou sections multiples.
+        """
         self.actions = []
         if not self.actions_dir.exists():
             self.actions_dir.mkdir(parents=True, exist_ok=True)
@@ -151,12 +154,45 @@ class ConfigManager:
             try:
                 with open(file_path, "rb") as f:
                     data = tomllib.load(f)
-                action = Action.from_dict(data)
-                self.actions.append(action)
+                file_actions = self._parse_actions_from_data(data, file_path)
+                self.actions.extend(file_actions)
             except Exception as err:
-                logger.error("Erreur lors de la lecture de l'action %s: %s", file_path, err)
+                logger.error("Erreur lors de la lecture des actions dans %s: %s", file_path, err)
 
         return self.actions
+
+    def _parse_actions_from_data(self, data: dict[str, Any], file_path: Path) -> list[Action]:
+        """Extrait une ou plusieurs actions d'un contenu TOML analysé."""
+        parsed_actions: list[Action] = []
+
+        # 1. Syntaxe multi-actions standard TOML : [[actions]]
+        if "actions" in data:
+            raw_actions = data["actions"]
+            if isinstance(raw_actions, list):
+                for item in raw_actions:
+                    if isinstance(item, dict):
+                        parsed_actions.append(Action.from_dict(item))
+            elif isinstance(raw_actions, dict):
+                # 2. Syntaxe sous forme de tables : [actions.nom_action]
+                for key, item in raw_actions.items():
+                    if isinstance(item, dict):
+                        if "name" not in item:
+                            item["name"] = str(key)
+                        parsed_actions.append(Action.from_dict(item))
+
+        # 3. Tables nommées directes : [action_copier] ... [action_coller]
+        if not parsed_actions:
+            for key, val in data.items():
+                if isinstance(val, dict) and ("trigger" in val or "commands" in val or "states" in val):
+                    if "name" not in val:
+                        val["name"] = str(key)
+                    parsed_actions.append(Action.from_dict(val))
+
+        # 4. Action unique à la racine du fichier (compatibilité ascendante)
+        if not parsed_actions and ("trigger" in data or "commands" in data or "states" in data or "name" in data):
+            parsed_actions.append(Action.from_dict(data))
+
+        return parsed_actions
 
     def load_references(self) -> None:
         """Charge les notices d'aide settings/commands.toml et settings/keys.toml."""

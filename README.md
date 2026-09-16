@@ -107,8 +107,32 @@ settings/
     └── ...
 ```
 
-### Créer une Nouvelle Action
-Créez simplement un nouveau fichier `.toml` dans `settings/actions/` (par exemple `mon_action.toml`) :
+### Créer ou Regrouper des Actions
+
+Vous pouvez organiser vos actions comme vous le préférez dans `settings/actions/` :
+
+#### Option A : Plusieurs actions dans un seul fichier TOML (Recommandé pour regrouper)
+Utilisez la syntaxe standard TOML `[[actions]]` (comme dans `settings/actions/hotkeys.toml`) :
+```toml
+[[actions]]
+name = "Copier Rapide"
+modes = ["special"]
+trigger = "c"
+[[actions.commands]]
+type = "hotkey"
+keys = ["ctrl", "c"]
+
+[[actions]]
+name = "Coller Rapide"
+modes = ["special"]
+trigger = "v"
+[[actions.commands]]
+type = "hotkey"
+keys = ["ctrl", "v"]
+```
+
+#### Option B : Une seule action par fichier TOML
+Définissez les attributs directement à la racine du fichier :
 ```toml
 name = "Sauvegarder et Fermer"
 description = "Envoie Ctrl+S puis Alt+F4"
@@ -127,7 +151,8 @@ duration = 0.2
 type = "hotkey"
 keys = ["alt", "f4"]
 ```
-Cliquez sur le bouton **🔄** dans le menu d'Alfred pour recharger la configuration à chaud sans redémarrer !
+
+Cliquez simplement sur le bouton **🔄** dans le menu d'Alfred pour recharger la configuration à chaud sans redémarrer !
 
 ---
 

@@ -1,0 +1,87 @@
+# ==============================================================================
+# ACTIONS MULTIPLES DANS UN SEUL FICHIER TOML (settings/actions/hotkeys.toml)
+# ==============================================================================
+# Vous pouvez définir autant d'actions que vous le souhaitez dans ce fichier
+# en utilisant la syntaxe standard TOML [[actions]].
+
+[[actions]]
+name = "Nouvel Onglet Navigateur"
+description = "Envoie la combinaison Ctrl+T pour ouvrir un onglet."
+modes = ["special"]
+trigger = "t"
+[[actions.commands]]
+type = "hotkey"
+keys = ["ctrl", "t"]
+
+[[actions]]
+name = "Lancer OneNote"
+description = "Ouvre Microsoft OneNote."
+modes = ["special"]
+trigger = "o"
+[[actions.commands]]
+type = "app"
+command = "onenote:"
+
+[[actions]]
+name = "Clic Gauche"
+description = "Simule un clic du bouton gauche de la souris."
+modes = ["special"]
+trigger = "space"
+[[actions.commands]]
+type = "click"
+button = "left"
+
+[[actions]]
+name = "Clic Milieu"
+description = "Simule un clic de la molette centrale."
+modes = ["special"]
+trigger = "m"
+[[actions.commands]]
+type = "middle_click"
+
+[[actions]]
+name = "Curseur au Centre"
+description = "Téléporte le curseur au centre de l'écran."
+modes = ["special"]
+trigger = "j"
+[[actions.commands]]
+type = "jump"
+x = 960
+y = 540
+
+[[actions]]
+name = "Sensibilité Souris Rapide / Normale"
+description = "Bascule la vitesse du curseur entre rapide (18) et standard (10)."
+modes = ["special"]
+trigger = "v"
+[[actions.commands]]
+type = "mouse_speed"
+speed = 18
+toggle = true
+
+[[actions]]
+name = "Activer Mode Grille"
+description = "Passe en mode grille pour naviguer aux touches."
+modes = ["special"]
+trigger = "g"
+[[actions.commands]]
+type = "mode"
+target = "grid"
+
+[[actions]]
+name = "Macro Recherche Web"
+description = "Ouvre un onglet, temporise puis recherche sur Google."
+modes = ["special"]
+trigger = "f"
+[[actions.commands]]
+type = "hotkey"
+keys = ["ctrl", "t"]
+[[actions.commands]]
+type = "sleep"
+duration = 0.15
+[[actions.commands]]
+type = "text"
+content = "https://google.com"
+[[actions.commands]]
+type = "hotkey"
+keys = ["enter"]

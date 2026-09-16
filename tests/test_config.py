@@ -44,3 +44,43 @@ def test_config_save_and_reload(tmp_path: Path):
     assert loaded.general.special_mode_key == "f1"
     assert loaded.ui.font_size == 16
     assert loaded.ui.theme == "light"
+
+
+def test_config_manager_load_multi_actions_file(tmp_path: Path):
+    actions_dir = tmp_path / "settings" / "actions"
+    actions_dir.mkdir(parents=True)
+
+    # Fichier multi-actions avec la syntaxe standard TOML [[actions]]
+    multi_toml = """
+[[actions]]
+name = "Copier Rapide"
+modes = ["special"]
+trigger = "c"
+[[actions.commands]]
+type = "hotkey"
+keys = ["ctrl", "c"]
+
+[[actions]]
+name = "Coller Rapide"
+modes = ["special"]
+trigger = "p"
+[[actions.commands]]
+type = "hotkey"
+keys = ["ctrl", "v"]
+"""
+    (actions_dir / "clipboard_actions.toml").write_text(multi_toml, encoding="utf-8")
+
+    mgr = ConfigManager(base_dir=tmp_path)
+    actions = mgr.load_actions()
+
+    assert len(actions) == 2
+    act_c = mgr.get_action_for_key("c", "special")
+    act_p = mgr.get_action_for_key("p", "special")
+
+    assert act_c is not None
+    assert act_c.name == "Copier Rapide"
+    assert act_c.trigger == "c"
+
+    assert act_p is not None
+    assert act_p.name == "Coller Rapide"
+    assert act_p.trigger == "p"
