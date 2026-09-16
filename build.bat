@@ -8,7 +8,7 @@ echo [1/3] Verification de l'environnement uv...
 uv run python --version
 
 echo [2/3] Compilation avec PyInstaller...
-uv run pyinstaller --noconfirm --onedir --windowed --uac-admin ^
+uv run pyinstaller --noconfirm --onedir --windowed ^
     --name "Alfred" ^
     --icon "assets\icon.ico" ^
     --collect-all customtkinter ^
