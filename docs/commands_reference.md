@@ -1,6 +1,29 @@
 # Spécification des Commandes - Alfred
 
-Ce document répertorie le schéma technique de chaque commande disponible dans `settings/actions/*.toml`.
+Ce document répertorie le schéma technique de chaque commande disponible dans les actions (`settings/actions/*.toml`).
+
+## Syntaxes d'Écriture des Commandes
+
+Une action peut structurer sa liste de commandes selon deux styles :
+
+### 1. Style ARRAY (Recommandé - clair et compact)
+```toml
+commands = [
+    { type = "hotkey", params = ["ctrl", "t"] },
+    { type = "sleep", params = [0.15] },
+    { type = "jump", params = [960, 540] },
+    { type = "click", params = ["left", 1] },
+    { type = "mouse_speed", params = [18, true] }
+]
+```
+
+### 2. Style avec Clés Nommées ou Blocs `[[commands]]`
+```toml
+commands = [
+    { type = "hotkey", keys = ["ctrl", "t"] },
+    { type = "jump", x = 960, y = 540 }
+]
+```
 
 ---
 

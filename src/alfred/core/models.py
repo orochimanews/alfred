@@ -5,6 +5,71 @@ from dataclasses import dataclass, field
 from typing import Any
 
 
+def _normalize_params_from_list(cmd_type: str, items: list[Any]) -> dict[str, Any]:
+    """Convertit un tableau de paramètres positionnels en dictionnaire nommé selon le type de commande."""
+    t = cmd_type.lower().strip()
+    match t:
+        case "hotkey":
+            if items and isinstance(items[0], list):
+                return {"keys": items[0]}
+            return {"keys": items}
+        case "click":
+            res = {}
+            if len(items) >= 1:
+                res["button"] = items[0]
+            if len(items) >= 2:
+                res["clicks"] = items[1]
+            if len(items) >= 4:
+                res["x"] = items[2]
+                res["y"] = items[3]
+            return res
+        case "middle_click":
+            return {}
+        case "jump":
+            res = {}
+            if len(items) >= 1:
+                res["x"] = items[0]
+            if len(items) >= 2:
+                res["y"] = items[1]
+            if len(items) >= 3:
+                res["relative"] = items[2]
+            return res
+        case "mode":
+            res = {}
+            if len(items) >= 1:
+                res["target"] = items[0]
+            if len(items) >= 2:
+                res["toggle_with"] = items[1]
+            return res
+        case "mouse_speed":
+            res = {}
+            if len(items) >= 1:
+                res["speed"] = items[0]
+            if len(items) >= 2:
+                res["toggle"] = items[1]
+            return res
+        case "app":
+            res = {}
+            if len(items) >= 1:
+                res["command"] = items[0]
+            if len(items) >= 2:
+                res["args"] = items[1]
+            return res
+        case "sleep":
+            return {"duration": items[0]} if items else {"duration": 0.1}
+        case "text":
+            return {"content": items[0]} if items else {"content": ""}
+        case "grid_cell":
+            res = {}
+            if len(items) >= 1:
+                res["col"] = items[0]
+            if len(items) >= 2:
+                res["row"] = items[1]
+            return res
+        case _:
+            return {"args": items}
+
+
 @dataclass
 class Command:
     """Représente une commande unitaire à exécuter."""
@@ -12,9 +77,37 @@ class Command:
     params: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> Command:
-        cmd_type = data.get("type", "unknown")
-        params = {k: v for k, v in data.items() if k != "type"}
+    def from_dict(cls, data: dict[str, Any] | list[Any]) -> Command:
+        """Parse une commande sous forme de dictionnaire ou d'array [type, params]."""
+        # Support array: ["hotkey", ["ctrl", "t"]] ou ["sleep", 0.15]
+        if isinstance(data, list):
+            if not data:
+                return cls(type="unknown")
+            cmd_type = str(data[0])
+            raw_p = data[1] if len(data) > 1 else []
+            if isinstance(raw_p, list):
+                params = _normalize_params_from_list(cmd_type, raw_p)
+            elif isinstance(raw_p, dict):
+                params = raw_p
+            else:
+                params = _normalize_params_from_list(cmd_type, [raw_p])
+            return cls(type=cmd_type, params=params)
+
+        # Support dictionnaire: { type = "...", ... }
+        cmd_type = str(data.get("type", "unknown"))
+
+        # Si params est fourni explicitement
+        if "params" in data:
+            raw_params = data["params"]
+            if isinstance(raw_params, list):
+                params = _normalize_params_from_list(cmd_type, raw_params)
+            elif isinstance(raw_params, dict):
+                params = dict(raw_params)
+            else:
+                params = _normalize_params_from_list(cmd_type, [raw_params])
+        else:
+            params = {k: v for k, v in data.items() if k != "type"}
+
         return cls(type=cmd_type, params=params)
 
 
@@ -51,20 +144,24 @@ class Action:
         raw_commands = data.get("commands", [])
         if isinstance(raw_commands, list):
             for cmd_data in raw_commands:
-                if isinstance(cmd_data, dict):
+                if isinstance(cmd_data, (dict, list)):
                     commands.append(Command.from_dict(cmd_data))
 
         states: list[ActionState] = []
         raw_states = data.get("states", {})
-        if isinstance(raw_states, dict):
+        if isinstance(raw_states, list):
+            for idx, state_data in enumerate(raw_states):
+                if isinstance(state_data, dict):
+                    state_name = state_data.get("name", f"État {idx}")
+                    state_cmds = [Command.from_dict(c) for c in state_data.get("commands", []) if isinstance(c, (dict, list))]
+                    states.append(ActionState(name=state_name, commands=state_cmds))
+        elif isinstance(raw_states, dict):
             for key in sorted(raw_states.keys(), key=lambda x: str(x)):
                 state_data = raw_states[key]
-                state_name = state_data.get("name", f"État {key}")
-                state_cmds: list[Command] = []
-                for scmd in state_data.get("commands", []):
-                    if isinstance(scmd, dict):
-                        state_cmds.append(Command.from_dict(scmd))
-                states.append(ActionState(name=state_name, commands=state_cmds))
+                if isinstance(state_data, dict):
+                    state_name = state_data.get("name", f"État {key}")
+                    state_cmds = [Command.from_dict(c) for c in state_data.get("commands", []) if isinstance(c, (dict, list))]
+                    states.append(ActionState(name=state_name, commands=state_cmds))
 
         return cls(
             name=name,

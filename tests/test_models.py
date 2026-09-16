@@ -10,6 +10,33 @@ def test_command_from_dict():
     assert cmd.params == {"keys": ["ctrl", "t"]}
 
 
+def test_command_with_array_params():
+    # Hotkey avec params en array
+    c1 = Command.from_dict({"type": "hotkey", "params": ["ctrl", "t"]})
+    assert c1.type == "hotkey"
+    assert c1.params == {"keys": ["ctrl", "t"]}
+
+    # Jump avec params [x, y]
+    c2 = Command.from_dict({"type": "jump", "params": [960, 540]})
+    assert c2.type == "jump"
+    assert c2.params == {"x": 960, "y": 540}
+
+    # Click avec params [button, clicks]
+    c3 = Command.from_dict({"type": "click", "params": ["left", 2]})
+    assert c3.type == "click"
+    assert c3.params == {"button": "left", "clicks": 2}
+
+    # Mouse speed avec params [speed, toggle]
+    c4 = Command.from_dict({"type": "mouse_speed", "params": [18, True]})
+    assert c4.type == "mouse_speed"
+    assert c4.params == {"speed": 18, "toggle": True}
+
+    # Format direct en liste [type, params]
+    c5 = Command.from_dict(["sleep", [0.2]])
+    assert c5.type == "sleep"
+    assert c5.params == {"duration": 0.2}
+
+
 def test_action_from_dict_standard():
     data = {
         "name": "Test Action",

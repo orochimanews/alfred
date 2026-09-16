@@ -4,19 +4,32 @@
 # Ce fichier sert de référence documentaire (notice) et de dictionnaire des
 # commandes exécutables par Alfred dans les fichiers d'actions (settings/actions/*.toml).
 #
-# Chaque action peut chaîner une ou plusieurs commandes dans une liste [[commands]].
-# Une commande est définie par son type ("type") et ses paramètres.
+# Syntaxes supportées au sein d'une action :
+# 1. Sous forme d'ARRAY compact (Recommandé) :
+#    commands = [
+#        { type = "hotkey", params = ["ctrl", "t"] },
+#        { type = "jump", params = [960, 540] },
+#        { type = "sleep", params = [0.15] }
+#    ]
+#
+# 2. Sous forme de dictionnaire nommé :
+#    commands = [
+#        { type = "hotkey", keys = ["ctrl", "t"] },
+#        { type = "jump", x = 960, y = 540 }
+#    ]
+#
+# 3. Sous forme de blocs [[commands]] (syntaxe étendue).
 
 [commands.hotkey]
 description = "Simule la frappe d'une combinaison de touches (ex: ctrl+t, alt+f4, win+d)."
-syntax = '{ type = "hotkey", keys = ["ctrl", "t"] }'
+syntax = '{ type = "hotkey", params = ["ctrl", "t"] } ou { type = "hotkey", keys = ["ctrl", "t"] }'
 parameters = [
     { name = "keys", type = "list[str]", description = "Liste ordonnée des touches ou chaîne formatée (ex: ['ctrl', 't'] ou 'ctrl+t')" }
 ]
 example = '''
-[[commands]]
-type = "hotkey"
-keys = ["ctrl", "t"]
+commands = [
+    { type = "hotkey", params = ["ctrl", "t"] }
+]
 '''
 
 [commands.click]

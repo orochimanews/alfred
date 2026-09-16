@@ -12,7 +12,7 @@ rows = 3
 
 # Mode dans lequel les raccourcis de la grille sont actifs
 # Ex: "grid", "special", ou "all"
-active_modes = ["grid", "special"]
+active_modes = ["grid"]
 
 # Comportement après le saut vers une case
 exit_mode_after_jump = false       # Si true, repasse en mode normal après le saut
