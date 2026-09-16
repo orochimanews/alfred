@@ -77,13 +77,7 @@ def main() -> None:
             hook_service=hook_service,
         )
 
-        def on_closing():
-            logger.info("Fermeture de l'application Alfred...")
-            hook_service.stop()
-            mouse.restore_initial_speed()
-            app.destroy()
-
-        app.protocol("WM_DELETE_WINDOW", on_closing)
+        app.protocol("WM_DELETE_WINDOW", app.close)
         app.mainloop()
 
     except Exception as err:

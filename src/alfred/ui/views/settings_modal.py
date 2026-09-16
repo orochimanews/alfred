@@ -32,8 +32,10 @@ class SettingsModal(ctk.CTkToplevel):
         self.transient(parent)
         self.grab_set()
 
-        # Fermeture avec Échap ou clic extérieur
+        # Fermeture avec Échap ou Ctrl+W
         self.bind("<Escape>", lambda e: self.destroy())
+        self.bind("<Control-w>", lambda e: self.destroy())
+        self.bind("<Control-W>", lambda e: self.destroy())
 
         self._build_ui()
 
@@ -75,7 +77,16 @@ class SettingsModal(ctk.CTkToplevel):
             width=80,
             font=self.theme_manager.get_font(size_offset=-1)
         )
-        self.entry_special_key.insert(0, cfg.general.special_mode_key)
+        current_special_key = cfg.general.special_mode_key
+        if not current_special_key:
+            for act in self.config_manager.actions:
+                if act.toggle and (
+                    any(any(c.type == "mode" for c in s.commands) for s in act.states)
+                    or any(c.type == "mode" for c in act.commands)
+                ):
+                    current_special_key = act.trigger
+                    break
+        self.entry_special_key.insert(0, current_special_key or "!")
         self.entry_special_key.pack(side="right")
 
         # Mode par défaut
@@ -86,9 +97,10 @@ class SettingsModal(ctk.CTkToplevel):
             text="Mode par Défaut :",
             font=self.theme_manager.get_font(size_offset=-1)
         ).pack(side="left")
+        mode_values = list(cfg.modes.keys()) if cfg.modes else ["normal", "special", "grid"]
         self.combo_default_mode = ctk.CTkComboBox(
             row_def_mode,
-            values=["normal", "special", "grid"],
+            values=mode_values,
             width=120,
             font=self.theme_manager.get_font(size_offset=-1)
         )
@@ -279,6 +291,12 @@ class SettingsModal(ctk.CTkToplevel):
         # Affectation
         cfg.general.special_mode_key = new_key
         cfg.general.default_mode = new_default_mode
+        for act in self.config_manager.actions:
+            if act.toggle and (
+                any(any(c.type == "mode" for c in s.commands) for s in act.states)
+                or any(c.type == "mode" for c in act.commands)
+            ):
+                act.trigger = new_key.lower()
         cfg.mouse.use_system_speed = new_use_sys_speed
         cfg.mouse.default_speed = new_def_speed
         cfg.ui.theme = new_theme

@@ -52,6 +52,10 @@ class AlfredApp(ctk.CTk):
         # Souscription aux changements d'état
         self.state_manager.subscribe(self._on_state_event)
 
+        # Raccourci clavier Ctrl+W pour fermer l'application quand elle a le focus
+        self.bind("<Control-w>", self.close)
+        self.bind("<Control-W>", self.close)
+
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=1)
 
@@ -61,6 +65,16 @@ class AlfredApp(ctk.CTk):
 
         # Afficher la vue par défaut (Dashboard)
         self._switch_view("dashboard")
+
+    def close(self, event: any = None) -> None:
+        """Ferme proprement l'application Alfred (arrêt du hook, restauration de la souris, destruction)."""
+        logger.info("Fermeture de l'application Alfred...")
+        if hasattr(self, "hook_service") and self.hook_service:
+            self.hook_service.stop()
+        from src.alfred.core.mouse import mouse
+        mouse.restore_initial_speed()
+        self.destroy()
+
 
     def _build_sticky_header(self) -> None:
         """Construit la barre de navigation supérieure toujours visible (Sticky Header)."""
