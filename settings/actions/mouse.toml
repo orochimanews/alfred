@@ -54,4 +54,14 @@ commands = [
     { type = "scroll", delta = -3 }
 ]
 
+[[actions]]
+name = "Mode Nudge Souris / Trackpad"
+description = "Bascule le mode Nudge : les mouvements de souris/trackpad avancent par bonds directionnels rapides"
+modes = ["special"]
+trigger = "d"
+commands = [
+    { type = "mouse_nudge", step = 150, toggle = true }
+]
+
+
 

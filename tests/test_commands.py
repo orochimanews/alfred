@@ -276,6 +276,56 @@ def test_mouse_controller_zoom():
         mock_keybd.assert_any_call(VK_CONTROL, 0, 2, 0)
 
 
+def test_command_mouse_nudge():
+    state = StateManager()
+    cfg_mgr = ConfigManager()
+    grid_mgr = MagicMock()
+    engine = CommandsEngine(state, grid_mgr, cfg_mgr)
+
+    with patch("src.alfred.core.commands_engine.mouse") as mock_mouse:
+        # 1. Toggle par défaut
+        cmd1 = Command(type="mouse_nudge", params={"step": 150})
+        engine.execute_command(cmd1)
+        mock_mouse.toggle_nudge_mode.assert_called_with(step=150, threshold=4, cooldown=0.08)
+
+        # 2. Activation explicite
+        cmd2 = Command(type="mouse_nudge", params={"step": 200, "active": True})
+        engine.execute_command(cmd2)
+        mock_mouse.start_nudge_mode.assert_called_with(step=200, threshold=4, cooldown=0.08)
+
+        # 3. Désactivation explicite
+        cmd3 = Command(type="mouse_nudge", params={"active": False})
+        engine.execute_command(cmd3)
+        mock_mouse.stop_nudge_mode.assert_called_once()
+
+
+def test_mouse_controller_nudge_lifecycle():
+    from src.alfred.core.mouse import MouseController
+    controller = MouseController()
+
+    try:
+        assert controller.is_nudge_active is False
+        # Activation
+        controller.start_nudge_mode(step=100, threshold=5, cooldown=0.05)
+        assert controller.is_nudge_active is True
+
+        # Désactivation
+        controller.stop_nudge_mode()
+        assert controller.is_nudge_active is False
+
+        # Toggle
+        res1 = controller.toggle_nudge_mode(step=120)
+        assert res1 is True
+        assert controller.is_nudge_active is True
+
+        res2 = controller.toggle_nudge_mode()
+        assert res2 is False
+        assert controller.is_nudge_active is False
+    finally:
+        controller.stop_nudge_mode()
+
+
+
 
 
 

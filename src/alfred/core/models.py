@@ -48,6 +48,13 @@ def _normalize_params_from_list(cmd_type: str, items: list[Any]) -> dict[str, An
             if len(items) >= 2:
                 res["toggle"] = items[1]
             return res
+        case "mouse_nudge" | "nudge":
+            res = {}
+            if len(items) >= 1:
+                res["step"] = items[0]
+            if len(items) >= 2:
+                res["toggle"] = items[1]
+            return res
         case "app":
             res = {}
             if len(items) >= 1:

@@ -64,6 +64,7 @@ def main() -> None:
         finally:
             hook_service.stop()
             mouse.restore_initial_speed()
+            mouse.stop_nudge_mode()
         return
 
     # 5. Lancement de l'interface graphique CustomTkinter
@@ -85,6 +86,7 @@ def main() -> None:
     finally:
         hook_service.stop()
         mouse.restore_initial_speed()
+        mouse.stop_nudge_mode()
 
 
 if __name__ == "__main__":

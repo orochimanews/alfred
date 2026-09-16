@@ -96,6 +96,8 @@ class CommandsEngine:
                 self._cmd_mode(params)
             case "mouse_speed":
                 self._cmd_mouse_speed(params)
+            case "mouse_nudge" | "nudge":
+                self._cmd_mouse_nudge(params)
             case "app":
                 self._cmd_app(params)
             case "sleep":
@@ -227,6 +229,23 @@ class CommandsEngine:
                 logger.info("Vitesse curseur restaurée : %d", restore_speed)
         elif target_speed is not None:
             mouse.set_speed(int(target_speed))
+
+    def _cmd_mouse_nudge(self, params: dict) -> None:
+        step = int(params.get("step", params.get("pixels", 120)))
+        threshold = int(params.get("threshold", 4))
+        cooldown = float(params.get("cooldown", 0.08))
+        toggle = bool(params.get("toggle", True))
+        active = params.get("active")
+
+        if active is not None:
+            if bool(active):
+                mouse.start_nudge_mode(step=step, threshold=threshold, cooldown=cooldown)
+            else:
+                mouse.stop_nudge_mode()
+        elif toggle:
+            mouse.toggle_nudge_mode(step=step, threshold=threshold, cooldown=cooldown)
+        else:
+            mouse.start_nudge_mode(step=step, threshold=threshold, cooldown=cooldown)
 
     def _cmd_app(self, params: dict) -> None:
         command = str(params.get("command", "")).strip()

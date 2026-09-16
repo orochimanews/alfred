@@ -150,6 +150,22 @@ speed = 18
 toggle = true
 '''
 
+[commands.mouse_nudge]
+description = "Active ou bascule le mode Nudge : les déplacements physiques de la souris ou du trackpad sont amplifiés par grands pas directionnels (step pixels)."
+syntax = '{ type = "mouse_nudge", step = 150, toggle = true }'
+parameters = [
+    { name = "step", type = "int", default = 120, description = "Distance en pixels de chaque bond directionnel (ex: 150)" },
+    { name = "toggle", type = "bool", default = true, description = "Bascule l'activation du mode Nudge (on/off)" },
+    { name = "threshold", type = "int", default = 4, optional = true, description = "Seuil minimal de mouvement physique en pixels pour déclencher un saut" },
+    { name = "cooldown", type = "float", default = 0.08, optional = true, description = "Intervalle minimal en secondes entre deux sauts pour fluidité et contrôle" }
+]
+example = '''
+[[commands]]
+type = "mouse_nudge"
+step = 150
+toggle = true
+'''
+
 [commands.app]
 description = "Lance ou met au premier plan un programme Windows (ex: OneNote, Notepad, Calc, URL, etc.)."
 syntax = '{ type = "app", command = "onenote" }'

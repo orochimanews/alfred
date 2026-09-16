@@ -122,3 +122,13 @@ Déplace le curseur au centre d'une case de la grille configurée dans `settings
 - **Paramètres** :
   - `col` (`int`) : Colonne de la grille (0-indexed).
   - `row` (`int`) : Ligne de la grille (0-indexed).
+
+---
+
+### 11. `mouse_nudge`
+Active ou bascule le mode Nudge : les déplacements physiques de la souris ou du trackpad sont amplifiés par bonds directionnels de `step` pixels. Idéal pour traverser de grands écrans rapidement au trackpad.
+- **Paramètres** :
+  - `step` (`int`, défaut: `120`) : Distance en pixels du bond directionnel (ex: `150`).
+  - `toggle` (`bool`, défaut: `true`) : Bascule l'état on/off.
+  - `threshold` (`int`, défaut: `4`) : Seuil de mouvement physique minimal en pixels.
+  - `cooldown` (`float`, défaut: `0.08`) : Délai minimal en secondes entre deux bonds.
