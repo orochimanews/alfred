@@ -6,12 +6,28 @@ import logging
 import argparse
 from pathlib import Path
 
-# Configuration du logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-    datefmt="%H:%M:%S",
-)
+def setup_logging() -> None:
+    """Configure la journalisation à la fois sur console et dans alfred.log."""
+    if getattr(sys, "frozen", False):
+        app_dir = Path(sys.executable).resolve().parent
+    else:
+        app_dir = Path(__file__).resolve().parent.parent.parent
+
+    log_file = app_dir / "alfred.log"
+    handlers: list[logging.Handler] = [
+        logging.FileHandler(log_file, encoding="utf-8", mode="a"),
+    ]
+    if sys.stderr is not None:
+        handlers.append(logging.StreamHandler(sys.stderr))
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        datefmt="%H:%M:%S",
+        handlers=handlers,
+    )
+
+setup_logging()
 logger = logging.getLogger("Alfred")
 
 from src.alfred.core.config import ConfigManager
@@ -28,6 +44,14 @@ def main() -> None:
     args = parser.parse_args()
 
     logger.info("Démarrage d'Alfred...")
+
+    # Association de l'icône personnalisée d'Alfred dans la barre des tâches Windows
+    if sys.platform == "win32":
+        try:
+            import ctypes
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("alfred.shortcut.system.v1")
+        except Exception:
+            pass
 
     # 1. Chargement de la configuration
     config_mgr = ConfigManager()

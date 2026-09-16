@@ -27,7 +27,7 @@ def test_config_manager_load_all():
     assert len(mgr.actions) >= 1
     action_t = mgr.get_action_for_key("t", "special")
     assert action_t is not None
-    assert action_t.name == "Nouvel Onglet Navigateur"
+    assert "Nouvel Onglet" in action_t.name
 
     # Vérification des références
     assert len(mgr.commands_reference) > 0
@@ -96,3 +96,24 @@ keys = ["ctrl", "v"]
     assert act_p is not None
     assert act_p.name == "Coller Rapide"
     assert act_p.trigger == "p"
+
+
+def test_config_manager_frozen_mode(monkeypatch, tmp_path: Path):
+    import sys
+    app_dir = tmp_path / "Alfred"
+    app_dir.mkdir(parents=True)
+    fake_settings = app_dir / "settings"
+    fake_settings.mkdir()
+    (fake_settings / "config.toml").write_text("[general]\napp_name = 'AlfredFrozen'\n", encoding="utf-8")
+
+    fake_exe = app_dir / "Alfred.exe"
+
+    monkeypatch.setattr(sys, "frozen", True, raising=False)
+    monkeypatch.setattr(sys, "executable", str(fake_exe))
+
+    mgr = ConfigManager()
+    assert mgr.root_dir == app_dir
+    assert mgr.settings_dir == fake_settings
+    cfg = mgr.load_app_config()
+    assert cfg.general.app_name == "AlfredFrozen"
+

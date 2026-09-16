@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 from typing import Any
 import logging
+import sys
 import tomllib
 import tomli_w
 
@@ -25,11 +26,20 @@ class ConfigManager:
     """Charge, valide et sauvegarde la configuration d'Alfred depuis le dossier settings/."""
 
     def __init__(self, base_dir: Path | None = None) -> None:
-        if base_dir is None:
+        if base_dir is not None:
+            self.root_dir = Path(base_dir)
+        elif getattr(sys, "frozen", False):
+            # En mode exécutable autonome (PyInstaller onedir/onefile)
+            exe_dir = Path(sys.executable).resolve().parent
+            if (exe_dir / "settings").exists():
+                self.root_dir = exe_dir
+            elif hasattr(sys, "_MEIPASS") and (Path(sys._MEIPASS) / "settings").exists():
+                self.root_dir = Path(sys._MEIPASS)
+            else:
+                self.root_dir = exe_dir
+        else:
             # Répertoire racine du projet (au-dessus de src/alfred/core)
             self.root_dir = Path(__file__).resolve().parent.parent.parent.parent
-        else:
-            self.root_dir = Path(base_dir)
 
         self.settings_dir = self.root_dir / "settings"
         self.actions_dir = self.settings_dir / "actions"
@@ -204,6 +214,7 @@ class ConfigManager:
             except Exception as err:
                 logger.error("Erreur lors de la lecture des actions dans %s: %s", file_path, err)
 
+        logger.info("%d action(s) chargée(s) depuis %s", len(self.actions), self.actions_dir)
         return self.actions
 
     def _parse_actions_from_data(self, data: dict[str, Any], file_path: Path) -> list[Action]:
