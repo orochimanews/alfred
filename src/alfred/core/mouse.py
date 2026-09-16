@@ -113,28 +113,29 @@ class MouseController:
         self._user32.mouse_event(MOUSEEVENTF_WHEEL, 0, 0, dw_data, 0)
 
     def zoom(self, direction: str = "in", steps: int = 1) -> None:
-        """Simule un zoom (in / out / reset) via Ctrl + touches de zoom universelles (VK_ADD / VK_OEM_MINUS)."""
+        """Simule un zoom (in / out / reset) via Ctrl + Molette de la souris (universel et fluide)."""
         d = direction.lower().strip()
         if d in ("in", "up", "+", "plus", "avant"):
-            vk = VK_ADD
-            scan = 0x4E
+            delta = WHEEL_DELTA * max(1, steps)
         elif d in ("out", "down", "-", "minus", "arrière", "arriere"):
-            vk = VK_OEM_MINUS
-            scan = 0x0C
+            delta = -WHEEL_DELTA * max(1, steps)
         elif d in ("reset", "0"):
-            vk = VK_NUMPAD0
-            scan = 0x52
+            self._user32.keybd_event(VK_CONTROL, 0, 0, 0)
+            try:
+                self._user32.keybd_event(0x30, 0, 0, 0)
+                time.sleep(0.01)
+                self._user32.keybd_event(0x30, 0, 2, 0)
+            finally:
+                self._user32.keybd_event(VK_CONTROL, 0, 2, 0)
+            return
         else:
-            vk = VK_ADD
-            scan = 0x4E
+            delta = WHEEL_DELTA * max(1, steps)
 
         self._user32.keybd_event(VK_CONTROL, 0, 0, 0)
+        time.sleep(0.01)
         try:
-            for _ in range(max(1, steps)):
-                self._user32.keybd_event(vk, scan, 0, 0)
-                time.sleep(0.01)
-                self._user32.keybd_event(vk, scan, 2, 0)
-                time.sleep(0.02)
+            self._user32.mouse_event(MOUSEEVENTF_WHEEL, 0, 0, int(delta), 0)
+            time.sleep(0.01)
         finally:
             self._user32.keybd_event(VK_CONTROL, 0, 2, 0)
 

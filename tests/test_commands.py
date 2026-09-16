@@ -256,23 +256,24 @@ def test_command_engine_zoom():
 
 
 def test_mouse_controller_zoom():
-    from src.alfred.core.mouse import MouseController, VK_CONTROL, VK_ADD, VK_OEM_MINUS
+    from src.alfred.core.mouse import MouseController, VK_CONTROL, MOUSEEVENTF_WHEEL, WHEEL_DELTA
 
     controller = MouseController()
-    with patch.object(controller._user32, "keybd_event") as mock_event:
-        controller.zoom(direction="in")
-        # Doit presser VK_CONTROL, puis VK_ADD down/up, puis VK_CONTROL up
-        mock_event.assert_any_call(VK_CONTROL, 0, 0, 0)
-        mock_event.assert_any_call(VK_ADD, 0x4E, 0, 0)
-        mock_event.assert_any_call(VK_ADD, 0x4E, 2, 0)
-        mock_event.assert_any_call(VK_CONTROL, 0, 2, 0)
+    with patch.object(controller._user32, "keybd_event") as mock_keybd, \
+         patch.object(controller._user32, "mouse_event") as mock_mouse:
 
-        mock_event.reset_mock()
-        controller.zoom(direction="out")
-        mock_event.assert_any_call(VK_CONTROL, 0, 0, 0)
-        mock_event.assert_any_call(VK_OEM_MINUS, 0x0C, 0, 0)
-        mock_event.assert_any_call(VK_OEM_MINUS, 0x0C, 2, 0)
-        mock_event.assert_any_call(VK_CONTROL, 0, 2, 0)
+        controller.zoom(direction="in", steps=1)
+        mock_keybd.assert_any_call(VK_CONTROL, 0, 0, 0)
+        mock_mouse.assert_called_with(MOUSEEVENTF_WHEEL, 0, 0, WHEEL_DELTA, 0)
+        mock_keybd.assert_any_call(VK_CONTROL, 0, 2, 0)
+
+        mock_keybd.reset_mock()
+        mock_mouse.reset_mock()
+
+        controller.zoom(direction="out", steps=2)
+        mock_keybd.assert_any_call(VK_CONTROL, 0, 0, 0)
+        mock_mouse.assert_called_with(MOUSEEVENTF_WHEEL, 0, 0, -2 * WHEEL_DELTA, 0)
+        mock_keybd.assert_any_call(VK_CONTROL, 0, 2, 0)
 
 
 
