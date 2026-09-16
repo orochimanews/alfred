@@ -32,10 +32,13 @@ class SettingsModal(ctk.CTkToplevel):
         self.transient(parent)
         self.grab_set()
 
-        # Fermeture avec Échap ou Ctrl+W
+        # Fermeture avec Échap ou le raccourci de fermeture configuré s'il existe
         self.bind("<Escape>", lambda e: self.destroy())
-        self.bind("<Control-w>", lambda e: self.destroy())
-        self.bind("<Control-W>", lambda e: self.destroy())
+        close_key = getattr(self.config_manager.app_config.general, "close", "").strip()
+        if close_key:
+            from src.alfred.ui.app import parse_shortcut_to_tk
+            for seq in parse_shortcut_to_tk(close_key):
+                self.bind(seq, lambda e: self.destroy())
 
         self._build_ui()
 
@@ -91,7 +94,7 @@ class SettingsModal(ctk.CTkToplevel):
 
         # Mode par défaut
         row_def_mode = ctk.CTkFrame(sec_mode, fg_color="transparent")
-        row_def_mode.pack(fill="x", padx=12, pady=(4, 10))
+        row_def_mode.pack(fill="x", padx=12, pady=4)
         ctk.CTkLabel(
             row_def_mode,
             text="Mode par Défaut :",
@@ -106,6 +109,23 @@ class SettingsModal(ctk.CTkToplevel):
         )
         self.combo_default_mode.set(cfg.general.default_mode)
         self.combo_default_mode.pack(side="right")
+
+        # Raccourci de fermeture
+        row_close = ctk.CTkFrame(sec_mode, fg_color="transparent")
+        row_close.pack(fill="x", padx=12, pady=(4, 10))
+        ctk.CTkLabel(
+            row_close,
+            text="Fermer Alfred (Focus) :",
+            font=self.theme_manager.get_font(size_offset=-1)
+        ).pack(side="left")
+        self.entry_close_shortcut = ctk.CTkEntry(
+            row_close,
+            width=120,
+            font=self.theme_manager.get_font(size_offset=-1),
+            placeholder_text="ex: ctrl+w"
+        )
+        self.entry_close_shortcut.insert(0, getattr(cfg.general, "close", ""))
+        self.entry_close_shortcut.pack(side="right")
 
         # --- Section 2: Vitesse Normale du Curseur ---
         sec_mouse = ctk.CTkFrame(container, corner_radius=6)
@@ -280,6 +300,7 @@ class SettingsModal(ctk.CTkToplevel):
         # Récupération des valeurs
         new_key = self.entry_special_key.get().strip() or "!"
         new_default_mode = self.combo_default_mode.get().strip() or "normal"
+        new_close = self.entry_close_shortcut.get().strip()
         new_use_sys_speed = bool(self.switch_use_sys_speed.get())
         new_def_speed = int(self.slider_def_speed.get())
 
@@ -291,6 +312,7 @@ class SettingsModal(ctk.CTkToplevel):
         # Affectation
         cfg.general.special_mode_key = new_key
         cfg.general.default_mode = new_default_mode
+        cfg.general.close = new_close
         for act in self.config_manager.actions:
             if act.toggle and (
                 any(any(c.type == "mode" for c in s.commands) for s in act.states)

@@ -1,9 +1,10 @@
 [general]
 app_name = "Alfred"
 default_mode = "normal"
-special_mode_key = "!"
-special_mode_name = "special"
-toggle_special_mode = true
+close = "ctrl+w"
+
+
+
 [mouse]
 # use_system_speed: si true (défaut), utilise la vitesse configurée sous Windows.
 # Si false, applique la sensibilité personnalisée 'default_speed' ci-dessous (1 à 20).
@@ -16,3 +17,22 @@ color_theme = "blue"
 font_size = 13
 always_on_top = false
 start_minimized = false
+
+
+# ------------------------------------------------------------------------------
+# MODES DISPONIBLES
+# Définition des modes d'Alfred avec leurs rôles.
+# Note : La bascule entre les modes est gérée par les actions dans settings/actions/
+# (ex: settings/actions/toggle_mode.toml pour basculer avec '!')
+# ------------------------------------------------------------------------------
+[modes.normal]
+name = "Normal"
+description = "Mode standard Windows (les touches fonctionnent normalement)."
+
+[modes.special]
+name = "Spécial"
+description = "Mode Alfred (les touches interceptées déclenchent des actions et raccourcis)."
+
+[modes.grid]
+name = "Grille"
+description = "Mode grille (déplacement rapide du curseur souris par zone d'écran)."

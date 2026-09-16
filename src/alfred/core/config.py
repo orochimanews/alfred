@@ -11,6 +11,7 @@ import tomli_w
 from src.alfred.core.models import (
     AppConfig,
     GeneralConfig,
+    ModeConfig,
     MouseConfig,
     UIConfig,
     GridConfig,
@@ -63,13 +64,35 @@ class ConfigManager:
                 data = tomllib.load(f)
 
             gen_data = data.get("general", {})
+            raw_close = gen_data.get("close")
+            if raw_close is None:
+                raw_close = gen_data.get("close_shortcut", "ctrl+w")
+            close_shortcut = str(raw_close).strip() if raw_close is not None else "ctrl+w"
+
             general = GeneralConfig(
                 app_name=gen_data.get("app_name", "Alfred"),
                 default_mode=gen_data.get("default_mode", "normal"),
-                special_mode_key=gen_data.get("special_mode_key", "!"),
+                close=close_shortcut,
+                special_mode_key=gen_data.get("special_mode_key", ""),
                 special_mode_name=gen_data.get("special_mode_name", "special"),
                 toggle_special_mode=bool(gen_data.get("toggle_special_mode", True)),
             )
+
+            modes_data = data.get("modes", {})
+            modes: dict[str, ModeConfig] = {}
+            if isinstance(modes_data, dict):
+                for m_id, m_val in modes_data.items():
+                    if isinstance(m_val, dict):
+                        modes[m_id] = ModeConfig(
+                            name=str(m_val.get("name", m_id.capitalize())),
+                            description=str(m_val.get("description", "")),
+                        )
+            if not modes:
+                modes = {
+                    "normal": ModeConfig(name="Normal", description="Mode standard Windows (les touches fonctionnent normalement)."),
+                    "special": ModeConfig(name="Spécial", description="Mode Alfred (les touches interceptées déclenchent des actions et raccourcis)."),
+                    "grid": ModeConfig(name="Grille", description="Mode grille (déplacement rapide du curseur souris par zone d'écran)."),
+                }
 
             mouse_data = data.get("mouse", {})
             raw_def = mouse_data.get("default_speed", 10)
@@ -99,7 +122,7 @@ class ConfigManager:
                 start_minimized=bool(ui_data.get("start_minimized", False)),
             )
 
-            self.app_config = AppConfig(general=general, mouse=mouse, ui=ui)
+            self.app_config = AppConfig(general=general, modes=modes, mouse=mouse, ui=ui)
         except Exception as err:
             logger.error("Erreur lors du chargement de %s: %s", self.config_path, err)
             self.app_config = AppConfig()
@@ -110,13 +133,22 @@ class ConfigManager:
         """Sauvegarde les paramètres actuels dans settings/config.toml."""
         try:
             self.settings_dir.mkdir(parents=True, exist_ok=True)
+            gen_dict: dict[str, Any] = {
+                "app_name": self.app_config.general.app_name,
+                "default_mode": self.app_config.general.default_mode,
+                "close": self.app_config.general.close,
+            }
+            if self.app_config.general.special_mode_key:
+                gen_dict["special_mode_key"] = self.app_config.general.special_mode_key
+
             data = {
-                "general": {
-                    "app_name": self.app_config.general.app_name,
-                    "default_mode": self.app_config.general.default_mode,
-                    "special_mode_key": self.app_config.general.special_mode_key,
-                    "special_mode_name": self.app_config.general.special_mode_name,
-                    "toggle_special_mode": self.app_config.general.toggle_special_mode,
+                "general": gen_dict,
+                "modes": {
+                    m_id: {
+                        "name": m_cfg.name,
+                        "description": m_cfg.description,
+                    }
+                    for m_id, m_cfg in self.app_config.modes.items()
                 },
                 "mouse": {
                     "use_system_speed": self.app_config.mouse.use_system_speed,

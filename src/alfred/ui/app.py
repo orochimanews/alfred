@@ -21,6 +21,44 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+def parse_shortcut_to_tk(shortcut: str) -> list[str]:
+    """Convertit une chaîne de raccourci (ex: 'ctrl+w') en séquences d'événements Tkinter."""
+    s = shortcut.strip()
+    if not s:
+        return []
+    if s.startswith("<") and s.endswith(">"):
+        return [s]
+
+    parts = [p.strip().lower() for p in s.split("+") if p.strip()]
+    if not parts:
+        return []
+
+    mods: list[str] = []
+    key = ""
+    for p in parts:
+        if p in ("ctrl", "control"):
+            mods.append("Control")
+        elif p in ("alt", "menu"):
+            mods.append("Alt")
+        elif p in ("shift",):
+            mods.append("Shift")
+        else:
+            key = p
+
+    if not key:
+        return []
+
+    mod_prefix = f"{'-'.join(mods)}-" if mods else ""
+    if len(key) == 1 and key.isalpha():
+        return [f"<{mod_prefix}{key.lower()}>", f"<{mod_prefix}{key.upper()}>"]
+    elif len(key) > 1:
+        if key.startswith("f") and key[1:].isdigit():
+            return [f"<{mod_prefix}{key.upper()}>"]
+        return [f"<{mod_prefix}{key.capitalize()}>"]
+    else:
+        return [f"<{mod_prefix}{key}>"]
+
+
 class AlfredApp(ctk.CTk):
     """Fenêtre principale d'Alfred."""
 
@@ -52,9 +90,9 @@ class AlfredApp(ctk.CTk):
         # Souscription aux changements d'état
         self.state_manager.subscribe(self._on_state_event)
 
-        # Raccourci clavier Ctrl+W pour fermer l'application quand elle a le focus
-        self.bind("<Control-w>", self.close)
-        self.bind("<Control-W>", self.close)
+        # Raccourci clavier dynamique de fermeture quand l'application a le focus
+        self._close_bound_sequences: list[str] = []
+        self._update_close_shortcut_binding()
 
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=1)
@@ -65,6 +103,26 @@ class AlfredApp(ctk.CTk):
 
         # Afficher la vue par défaut (Dashboard)
         self._switch_view("dashboard")
+
+    def _update_close_shortcut_binding(self) -> None:
+        """Met à jour les raccourcis clavier de fermeture selon config.toml [general].close."""
+        for seq in getattr(self, "_close_bound_sequences", []):
+            try:
+                self.unbind(seq)
+            except Exception:
+                pass
+        self._close_bound_sequences = []
+
+        close_shortcut = getattr(self.config_manager.app_config.general, "close", "").strip()
+        if not close_shortcut:
+            logger.info("Aucun raccourci de fermeture configuré (close est vide).")
+            return
+
+        sequences = parse_shortcut_to_tk(close_shortcut)
+        for seq in sequences:
+            self.bind(seq, self.close)
+            self._close_bound_sequences.append(seq)
+        logger.debug("Raccourci de fermeture '%s' activé sur %s", close_shortcut, sequences)
 
     def close(self, event: any = None) -> None:
         """Ferme proprement l'application Alfred (arrêt du hook, restauration de la souris, destruction)."""
@@ -279,6 +337,7 @@ class AlfredApp(ctk.CTk):
         """Recharge l'ensemble des fichiers TOML sans redémarrer l'application."""
         self.config_manager.load_all()
         self.grid_manager.update_config(self.config_manager.grid_config)
+        self._update_close_shortcut_binding()
 
         # Rafraîchir les vues
         act_view = self.views.get("actions")
