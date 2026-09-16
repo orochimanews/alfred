@@ -120,3 +120,64 @@ def test_command_engine_mouse_speed_toggle_custom_default_speed():
         assert engine._is_fast_mouse_speed is False
 
 
+def test_command_engine_app_onenote_normalization():
+    """Vérifie que 'onenote:' est bien normalisé en 'onenote' pour éviter le bug de dialogue d'erreur OneNote."""
+    state = StateManager(initial_mode="special")
+    cfg_mgr = ConfigManager()
+    grid_mgr = MagicMock()
+    engine = CommandsEngine(state, grid_mgr, cfg_mgr)
+
+    with patch("src.alfred.core.commands_engine.find_window_for_app", return_value=None), patch("os.startfile") as mock_startfile:
+        cmd = Command(type="app", params={"command": "onenote:"})
+        engine.execute_command(cmd)
+        mock_startfile.assert_called_once_with("onenote")
+
+
+def test_command_engine_app_direct_and_with_args():
+    state = StateManager(initial_mode="special")
+    cfg_mgr = ConfigManager()
+    grid_mgr = MagicMock()
+    engine = CommandsEngine(state, grid_mgr, cfg_mgr)
+
+    with patch("src.alfred.core.commands_engine.find_window_for_app", return_value=None), patch("os.startfile") as mock_startfile:
+        cmd_app = Command(type="app", params={"command": "onenote"})
+        engine.execute_command(cmd_app)
+        mock_startfile.assert_called_with("onenote")
+
+    with patch("src.alfred.core.commands_engine.find_window_for_app", return_value=None), patch("os.startfile") as mock_startfile:
+        cmd_args = Command(type="app", params={"command": "notepad", "args": ["file.txt"]})
+        engine.execute_command(cmd_args)
+        mock_startfile.assert_called_with("notepad", arguments="file.txt")
+
+
+def test_command_engine_app_fallback_subprocess():
+    state = StateManager(initial_mode="special")
+    cfg_mgr = ConfigManager()
+    grid_mgr = MagicMock()
+    engine = CommandsEngine(state, grid_mgr, cfg_mgr)
+
+    with patch("src.alfred.core.commands_engine.find_window_for_app", return_value=None), \
+         patch("os.startfile", side_effect=OSError("Not found")), \
+         patch("subprocess.Popen") as mock_popen:
+        cmd = Command(type="app", params={"command": "custom_script.bat", "args": ["--run"]})
+        engine.execute_command(cmd)
+        mock_popen.assert_called_once_with(["custom_script.bat", "--run"], shell=True)
+
+
+def test_command_engine_app_reuses_existing_window():
+    """Vérifie que si une fenêtre de l'application est déjà ouverte, elle est réactivée au premier plan sans lancer de nouveau processus."""
+    state = StateManager(initial_mode="special")
+    cfg_mgr = ConfigManager()
+    grid_mgr = MagicMock()
+    engine = CommandsEngine(state, grid_mgr, cfg_mgr)
+
+    with patch("src.alfred.core.commands_engine.find_window_for_app", return_value=12345) as mock_find, \
+         patch("src.alfred.core.commands_engine.bring_window_to_foreground", return_value=True) as mock_bring, \
+         patch("os.startfile") as mock_startfile:
+        cmd = Command(type="app", params={"command": "explorer"})
+        engine.execute_command(cmd)
+        mock_find.assert_called_once_with("explorer")
+        mock_bring.assert_called_once_with(12345)
+        mock_startfile.assert_not_called()
+
+

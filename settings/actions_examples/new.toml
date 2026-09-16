@@ -1,0 +1,93 @@
+
+[[actions]]
+name = "Lancer OneNote"
+description = "Ouvre Microsoft OneNote"
+modes = ["special"]
+trigger = "o"
+commands = [
+    { type = "app", params = ["onenote"] }
+]
+
+[[actions]]
+name = "Lancer Antigravity Agent"
+description = "Ouvre directement l'agent Antigravity"
+modes = ["special"]
+trigger = "g"
+commands = [
+    { type = "app", params = ["antigravity"] }
+]
+
+[[actions]]
+name = "Lancer Google Chrome"
+description = "Ouvre directement le vrai navigateur Google Chrome"
+modes = ["special"]
+trigger = "j"
+commands = [
+    { type = "app", params = ["C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"] }
+]
+
+[[actions]]
+name = "Lancer Explorateur de fichiers"
+description = "Ouvre ou affiche l'Explorateur de fichiers Windows"
+modes = ["special"]
+trigger = "e"
+commands = [
+    { type = "app", params = ["explorer"] }
+]
+
+[[actions]]
+name = "Clic Gauche"
+description = "Simule un clic du bouton gauche"
+modes = ["special"]
+trigger = "space"
+commands = [
+    { type = "click", params = ["left"] }
+]
+
+[[actions]]
+name = "Clic Milieu"
+description = "Simule un clic molette (bouton du milieu)"
+modes = ["special"]
+trigger = "m"
+commands = [
+    { type = "middle_click" }
+]
+
+[[actions]]
+name = "Curseur au Centre"
+description = "Téléporte le curseur au centre de l'écran"
+modes = ["special"]
+trigger = "j"
+commands = [
+    { type = "jump", params = [960, 540] }
+]
+
+[[actions]]
+name = "Sensibilité Souris Rapide / Normale"
+description = "Bascule la vitesse du curseur (18 rapide, toggle)"
+modes = ["special"]
+trigger = "v"
+commands = [
+    { type = "mouse_speed", params = [18, true] }
+]
+
+[[actions]]
+name = "Activer Mode Grille"
+description = "Passe en mode grille pour naviguer aux touches"
+modes = ["special"]
+trigger = "g"
+commands = [
+    { type = "mode", params = ["grid"] }
+]
+
+[[actions]]
+name = "Macro Recherche Web"
+description = "Ouvre un onglet, temporise puis recherche sur Google"
+modes = ["special"]
+trigger = "f"
+commands = [
+    { type = "hotkey", params = ["ctrl", "t"] },
+    { type = "sleep", params = [0.15] },
+    { type = "text", params = ["https://google.com"] },
+    { type = "hotkey", params = ["enter"] }
+]

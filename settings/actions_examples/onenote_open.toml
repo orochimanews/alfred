@@ -7,4 +7,4 @@ trigger = "o"
 
 [[commands]]
 type = "app"
-command = "onenote:"
+command = "onenote"

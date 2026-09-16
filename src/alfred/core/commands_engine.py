@@ -10,6 +10,7 @@ import keyboard
 
 from src.alfred.core.models import Command, Action
 from src.alfred.core.mouse import mouse
+from src.alfred.core.window import find_window_for_app, bring_window_to_foreground
 
 if TYPE_CHECKING:
     from src.alfred.core.state import StateManager
@@ -186,15 +187,58 @@ class CommandsEngine:
     def _cmd_app(self, params: dict) -> None:
         command = str(params.get("command", "")).strip()
         args = params.get("args", [])
+        reuse_existing = bool(params.get("reuse_existing", True))
         if not command:
             return
 
-        try:
-            # Gestion des protocoles Windows (ex: onenote:, ms-settings:, urls)
-            if ":" in command and not Path_is_absolute_win(command):
-                os.startfile(command)
-                return
+        command = os.path.expandvars(os.path.expanduser(command))
 
+        try:
+            # Correction spécifique pour OneNote :
+            # Sous Windows, le protocole "onenote:" est associé à : ONENOTE.EXE /hyperlink "%1"
+            # Lancer "onenote:" sans URL de page valide fait croire à OneNote qu'un lien invalide a été ouvert,
+            # provoquant l'affichage d'une boîte de dialogue d'erreur "Microsoft OneNote".
+            # En ciblant l'exécutable/App Path "onenote", OneNote s'ouvre normalement sans message d'erreur.
+            target = command
+            if target.lower() == "onenote:":
+                target = "onenote"
+            elif target.lower() in ("antigravity", "antigravity.exe"):
+                default_antigravity = os.path.expandvars(r"%LOCALAPPDATA%\Programs\antigravity\Antigravity.exe")
+                if os.path.exists(default_antigravity):
+                    target = default_antigravity
+            elif target.lower() in ("chrome", "chrome.exe", "google-chrome", "googlechrome"):
+                # Préférer le vrai Google Chrome officiel s'il est installé,
+                # afin d'éviter qu'un fork Chromium (ex: BrowserOS) ne détourne l'appel via HKCU App Paths.
+                real_chrome_paths = [
+                    os.path.expandvars(r"%ProgramFiles%\Google\Chrome\Application\chrome.exe"),
+                    os.path.expandvars(r"%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe"),
+                    os.path.expandvars(r"%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe"),
+                ]
+                for p in real_chrome_paths:
+                    if os.path.isfile(p):
+                        target = p
+                        break
+
+            # 0. Vérifier si l'application possède déjà une fenêtre ouverte à réactiver
+            if reuse_existing:
+                existing_hwnd = find_window_for_app(target)
+                if existing_hwnd:
+                    logger.info("Application '%s' déjà ouverte (HWND: %d), réactivation au premier plan.", target, existing_hwnd)
+                    if bring_window_to_foreground(existing_hwnd):
+                        return
+
+            # 1. Tenter via os.startfile (gère nativement les App Paths Windows, protocoles URI, extensions associées et URLs)
+            try:
+                if args:
+                    args_str = " ".join(str(a) for a in args)
+                    os.startfile(target, arguments=args_str)
+                else:
+                    os.startfile(target)
+                return
+            except Exception:
+                pass
+
+            # 2. Repli sur subprocess.Popen si os.startfile échoue
             cmd_list = [command]
             if isinstance(args, list):
                 cmd_list.extend(str(a) for a in args)

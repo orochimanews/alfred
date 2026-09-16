@@ -98,7 +98,7 @@ Modifie la sensibilité/vitesse du curseur de la souris Windows (échelle standa
 ### 7. `app`
 Lance une application Windows ou un protocole URI.
 - **Paramètres** :
-  - `command` (`str`) : Chemin d'accès ou commande URI (ex: `"onenote:"`, `"notepad.exe"`, `"calc.exe"`, `"https://..."`).
+  - `command` (`str`) : Nom de l'application (ex: `"onenote"`, `"notepad.exe"`, `"calc"`), URI ou lien (ex: `"ms-settings:"`, `"https://..."`).
   - `args` (`list[str]`, optionnel) : Arguments supplémentaires.
 
 ---

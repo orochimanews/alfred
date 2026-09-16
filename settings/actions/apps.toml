@@ -1,0 +1,35 @@
+[[actions]]
+name = "Lancer OneNote"
+description = "Ouvre Microsoft OneNote"
+modes = ["special"]
+trigger = "o"
+commands = [
+    { type = "app", params = ["onenote"] }
+]
+
+[[actions]]
+name = "Lancer Antigravity Agent"
+description = "Ouvre directement l'agent Antigravity"
+modes = ["special"]
+trigger = "g"
+commands = [
+    { type = "app", params = ["antigravity"] }
+]
+
+[[actions]]
+name = "Lancer Google Chrome"
+description = "Ouvre directement le vrai navigateur Google Chrome"
+modes = ["special"]
+trigger = "j"
+commands = [
+    { type = "app", params = ["C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"] }
+]
+
+[[actions]]
+name = "Lancer Explorateur de fichiers"
+description = "Ouvre ou affiche l'Explorateur de fichiers Windows"
+modes = ["special"]
+trigger = "e"
+commands = [
+    { type = "app", params = ["explorer"] }
+]

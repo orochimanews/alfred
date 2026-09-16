@@ -103,15 +103,15 @@ toggle = true
 
 [commands.app]
 description = "Lance ou met au premier plan un programme Windows (ex: OneNote, Notepad, Calc, URL, etc.)."
-syntax = '{ type = "app", command = "onenote:" }'
+syntax = '{ type = "app", command = "onenote" }'
 parameters = [
-    { name = "command", type = "str", description = "Nom de l'exécutable, URI de protocole Windows (onenote:, ms-settings:), ou chemin complet" },
+    { name = "command", type = "str", description = "Nom de l'application (onenote, notepad, calc), URI de protocole Windows (ms-settings:), ou chemin complet" },
     { name = "args", type = "list[str]", optional = true, description = "Arguments de ligne de commande éventuels" }
 ]
 example = '''
 [[commands]]
 type = "app"
-command = "onenote:"
+command = "onenote"
 '''
 
 [commands.sleep]
