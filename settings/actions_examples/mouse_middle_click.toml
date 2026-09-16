@@ -1,9 +1,0 @@
-# Action : Clic souris milieu (molette)
-name = "Clic Milieu"
-description = "Simule un clic de la molette de souris (pour ouvrir un lien dans un nouvel onglet, fermer un onglet, etc.)."
-
-modes = ["special"]
-trigger = "m"
-
-[[commands]]
-type = "middle_click"

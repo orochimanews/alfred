@@ -15,6 +15,8 @@ MOUSEEVENTF_RIGHTDOWN = 0x0008
 MOUSEEVENTF_RIGHTUP = 0x0010
 MOUSEEVENTF_MIDDLEDOWN = 0x0020
 MOUSEEVENTF_MIDDLEUP = 0x0040
+MOUSEEVENTF_WHEEL = 0x0800
+WHEEL_DELTA = 120
 
 SPI_GETMOUSESPEED = 0x0070
 SPI_SETMOUSESPEED = 0x0071
@@ -75,6 +77,33 @@ class MouseController:
             self._user32.mouse_event(up_flag, 0, 0, 0, 0)
             if i < clicks - 1:
                 time.sleep(0.05)
+
+    def mouse_down(self, button: str = "left") -> None:
+        """Enfonce et maintient le bouton spécifié ('left', 'right', 'middle')."""
+        btn = button.lower()
+        if btn == "right":
+            down_flag = MOUSEEVENTF_RIGHTDOWN
+        elif btn == "middle":
+            down_flag = MOUSEEVENTF_MIDDLEDOWN
+        else:
+            down_flag = MOUSEEVENTF_LEFTDOWN
+        self._user32.mouse_event(down_flag, 0, 0, 0, 0)
+
+    def mouse_up(self, button: str = "left") -> None:
+        """Relâche le bouton spécifié ('left', 'right', 'middle')."""
+        btn = button.lower()
+        if btn == "right":
+            up_flag = MOUSEEVENTF_RIGHTUP
+        elif btn == "middle":
+            up_flag = MOUSEEVENTF_MIDDLEUP
+        else:
+            up_flag = MOUSEEVENTF_LEFTUP
+        self._user32.mouse_event(up_flag, 0, 0, 0, 0)
+
+    def scroll(self, clicks: int = 1) -> None:
+        """Simule un défilement de molette (positif = vers le haut, négatif = vers le bas)."""
+        dw_data = int(clicks * WHEEL_DELTA)
+        self._user32.mouse_event(MOUSEEVENTF_WHEEL, 0, 0, dw_data, 0)
 
     def get_speed(self) -> int:
         """Récupère la vitesse actuelle du curseur Windows (entre 1 et 20)."""

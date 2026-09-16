@@ -59,6 +59,15 @@ class DashboardView(ctk.CTkFrame):
 
         # Raccourci de bascule configuré
         special_key = self.config_manager.app_config.general.special_mode_key
+        if not special_key:
+            for act in self.config_manager.actions:
+                if act.toggle and (
+                    any(any(c.type == "mode" for c in s.commands) for s in act.states)
+                    or any(c.type == "mode" for c in act.commands)
+                ):
+                    special_key = act.trigger
+                    break
+        special_key = special_key or "!"
         lbl_hint = ctk.CTkLabel(
             card,
             text=f"Touche de bascule : [{special_key}]",

@@ -113,6 +113,12 @@ class CommandsEngine:
                 raw_off = params.get("offset", params.get("steps", params.get("distance", None)))
                 offset = int(raw_off) if raw_off is not None else None
                 self.grid_manager.snap_to_edge(offset=offset)
+            case "scroll" | "wheel":
+                self._cmd_scroll(params)
+            case "mouse_down":
+                self._cmd_mouse_down(params)
+            case "mouse_up":
+                self._cmd_mouse_up(params)
             case _:
                 logger.warning("Commande de type inconnu ignorée : '%s'", cmd_type)
 
@@ -134,6 +140,22 @@ class CommandsEngine:
         button = str(params.get("button", "left"))
         clicks = int(params.get("clicks", 1))
         mouse.click(button=button, clicks=clicks)
+
+    def _cmd_scroll(self, params: dict) -> None:
+        delta = params.get("delta", params.get("clicks", 1))
+        try:
+            delta_val = int(delta)
+        except (ValueError, TypeError):
+            delta_val = 1
+        mouse.scroll(delta_val)
+
+    def _cmd_mouse_down(self, params: dict) -> None:
+        button = str(params.get("button", "left"))
+        mouse.mouse_down(button)
+
+    def _cmd_mouse_up(self, params: dict) -> None:
+        button = str(params.get("button", "left"))
+        mouse.mouse_up(button)
 
     def _cmd_jump(self, params: dict) -> None:
         x = int(params.get("x", 0))

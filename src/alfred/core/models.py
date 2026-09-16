@@ -71,6 +71,12 @@ def _normalize_params_from_list(cmd_type: str, items: list[Any]) -> dict[str, An
             if len(items) >= 1:
                 res["offset"] = items[0]
             return res
+        case "scroll" | "wheel":
+            return {"delta": items[0]} if items else {"delta": 1}
+        case "mouse_down":
+            return {"button": items[0]} if items else {"button": "left"}
+        case "mouse_up":
+            return {"button": items[0]} if items else {"button": "left"}
         case _:
             return {"args": items}
 

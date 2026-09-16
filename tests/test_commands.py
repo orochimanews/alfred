@@ -192,4 +192,53 @@ def test_command_engine_edge_snap():
     grid_mgr.snap_to_edge.assert_called_once_with(offset=20)
 
 
+def test_command_engine_scroll():
+    state = StateManager(initial_mode="special")
+    cfg_mgr = ConfigManager()
+    grid_mgr = MagicMock()
+    engine = CommandsEngine(state, grid_mgr, cfg_mgr)
+
+    with patch("src.alfred.core.commands_engine.mouse") as mock_mouse:
+        cmd_up = Command(type="scroll", params={"delta": 3})
+        engine.execute_command(cmd_up)
+        mock_mouse.scroll.assert_called_with(3)
+
+        cmd_down = Command(type="wheel", params={"delta": -3})
+        engine.execute_command(cmd_down)
+        mock_mouse.scroll.assert_called_with(-3)
+
+
+def test_command_engine_mouse_down_up():
+    state = StateManager(initial_mode="special")
+    cfg_mgr = ConfigManager()
+    grid_mgr = MagicMock()
+    engine = CommandsEngine(state, grid_mgr, cfg_mgr)
+
+    with patch("src.alfred.core.commands_engine.mouse") as mock_mouse:
+        cmd_down = Command(type="mouse_down", params={"button": "left"})
+        engine.execute_command(cmd_down)
+        mock_mouse.mouse_down.assert_called_with("left")
+
+        cmd_up = Command(type="mouse_up", params={"button": "left"})
+        engine.execute_command(cmd_up)
+        mock_mouse.mouse_up.assert_called_with("left")
+
+
+def test_mouse_controller_scroll_and_down_up():
+    from src.alfred.core.mouse import MouseController, MOUSEEVENTF_WHEEL, MOUSEEVENTF_LEFTDOWN, MOUSEEVENTF_LEFTUP, WHEEL_DELTA
+
+    controller = MouseController()
+    with patch.object(controller._user32, "mouse_event") as mock_event:
+        controller.scroll(3)
+        mock_event.assert_called_with(MOUSEEVENTF_WHEEL, 0, 0, 3 * WHEEL_DELTA, 0)
+
+        controller.mouse_down("left")
+        mock_event.assert_called_with(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
+
+        controller.mouse_up("left")
+        mock_event.assert_called_with(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
+
+
+
+
 

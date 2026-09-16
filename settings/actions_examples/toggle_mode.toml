@@ -1,22 +1,15 @@
-# Action : Bascule État Exemple
+# ==============================================================================
+# EXEMPLE D'ACTION TOGGLE MODE (settings/actions_examples/toggle_mode.toml)
+# ==============================================================================
+
+[[actions]]
 name = "Toggle Mode Spécial/Normal"
 description = "Bascule entre le mode normal et le mode spécial."
-
-# Disponible dans les modes normal et special
 modes = ["normal", "special"]
 trigger = "!"
-
-# Toggle d'états
 toggle = true
 
-[states.0]
-name = "Vers Spécial"
-[[states.0.commands]]
-type = "mode"
-target = "special"
-
-[states.1]
-name = "Vers Normal"
-[[states.1.commands]]
-type = "mode"
-target = "normal"
+states = [
+    { name = "Vers Spécial", commands = [{ type = "mode", params = ["special"] }] },
+    { name = "Vers Normal", commands = [{ type = "mode", params = ["normal"] }] }
+]

@@ -22,6 +22,72 @@ description = "Bascule la vitesse du pointeur entre rapide (18) et normale (10)"
 modes = ["special"]
 trigger = "s"
 commands = [
-    { type = "mouse_speed", speed = 18, toggle = true }
+    { type = "mouse_speed", speed = 100, toggle = true }
 ]
+
+[[actions]]
+name = "Drag & Drop"
+description = "Bascule le maintien et le relâchement du clic gauche (glisser-déposer)"
+modes = ["special"]
+trigger = ","
+toggle = true
+states = [
+    { name = "Maintien Clic (Drag)", commands = [{ type = "mouse_down", button = "left" }] },
+    { name = "Relâchement Clic (Drop)", commands = [{ type = "mouse_up", button = "left" }] }
+]
+
+[[actions]]
+name = "Molette Haut (Scroll Up)"
+description = "Défilement vertical vers le haut"
+modes = ["special"]
+trigger = "u"
+commands = [
+    { type = "scroll", delta = 3 }
+]
+
+[[actions]]
+name = "Molette Bas (Scroll Down)"
+description = "Défilement vertical vers le bas"
+modes = ["special"]
+trigger = "y"
+commands = [
+    { type = "scroll", delta = -3 }
+]
+
+[[actions]]
+name = "Début"
+description = "Début de page / document (Ctrl + Home)"
+modes = ["special"]
+trigger = "h"
+commands = [
+    { type = "hotkey", params = ["ctrl", "home"] }
+]
+
+[[actions]]
+name = "Fin"
+description = "Fin de page / document (Ctrl + End)"
+modes = ["special"]
+trigger = "p"
+commands = [
+    { type = "hotkey", params = ["ctrl", "end"] }
+]
+
+[[actions]]
+name = "Zoom Avant"
+description = "Agrandit le zoom (Ctrl + +)"
+modes = ["special"]
+trigger = "+"
+commands = [
+    { type = "hotkey", params = ["ctrl", "+"] }
+]
+
+[[actions]]
+name = "Zoom Arrière"
+description = "Réduit le zoom (Ctrl + -)"
+modes = ["special"]
+trigger = "="
+commands = [
+    { type = "hotkey", params = ["ctrl", "-"] }
+]
+
 

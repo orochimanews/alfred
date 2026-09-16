@@ -80,21 +80,61 @@ b = "Touche B"
 n = "Touche N"
 
 [azerty_special_chars]
-description = "Caractères et ponctuations spécifiques au clavier AZERTY"
+description = "Caractères et ponctuations spécifiques au clavier AZERTY et leurs identifiants"
+
+# --- Chevrons (Inférieur / Supérieur) ---
+"<" = "Chevron ouvrant / Signe inférieur à (touche à gauche de Z/W ou à côté de Maj gauche)"
+">" = "Chevron fermant / Signe supérieur à (Shift + <)"
+less = "Nom alternatif système pour '<' (Chevron ouvrant)"
+greater = "Nom alternatif système pour '>' (Chevron fermant)"
+
+# --- Symboles et Ponctuations Standard ---
 "!" = "Point d'exclamation (touche standard à droite du N en AZERTY)"
 "?" = "Point d'interrogation (Shift + virgule)"
-";" = "Point-virgule"
-":" = "Deux-points"
+";" = "Point-virgule (touche à droite du M)"
+":" = "Deux-points (touche à droite du point-virgule)"
 "," = "Virgule"
-"." = "Point (Shift + point-virgule sur AZERTY)"
-"§" = "Paragraphe (Shift + ! sur certains claviers)"
+"." = "Point (Shift + virgule ou Shift + point-virgule)"
+"§" = "Paragraphe (Shift + ! sur certains claviers AZERTY)"
 "$" = "Dollar (touche à droite de P ou *)"
-"*" = "Étoile (astérisque)"
+"*" = "Étoile / Astérisque (touche à droite de $"
+"%" = "Pourcentage (Shift + ù)"
 "ù" = "U accent grave"
 "é" = "E accent aigu (touche 2 du rang supérieur)"
 "è" = "E accent grave (touche 7 du rang supérieur)"
 "à" = "A accent grave (touche 0 du rang supérieur)"
 "ç" = "C cédille (touche 9 du rang supérieur)"
+
+# --- Opérateurs et Symboles Avancés ---
+"&" = "Esperluette / Et commercial (touche 1 du rang supérieur)"
+"~" = "Tilde (AltGr + 2 sur AZERTY)"
+"#" = "Dièse / Hash (AltGr + 3 sur AZERTY)"
+"{" = "Accolade ouvrante (AltGr + 4 sur AZERTY)"
+"[" = "Crochet ouvrant (AltGr + 5 sur AZERTY)"
+"|" = "Barre verticale / Pipe (AltGr + 6 sur AZERTY)"
+"`" = "Accent grave / Backtick (AltGr + 7 sur AZERTY)"
+"\\" = "Barre oblique inverse / Antislash (AltGr + 8 sur AZERTY)"
+"^" = "Accent circonflexe / Caret (touche à droite de P sur AZERTY)"
+"@" = "Arobase (AltGr + 0 ou touche à gauche du 1)"
+"]" = "Crochet fermant (AltGr + ° sur AZERTY)"
+"}" = "Accolade fermante (AltGr + = sur AZERTY)"
+
+# --- Signes Mathématiques et Parenthèses ---
+"+" = "Signe Plus (Shift + =)"
+"-" = "Signe Moins / Tiret (touche 6 du rang supérieur)"
+"_" = "Tiret bas / Underscore (touche 8 du rang supérieur)"
+"/" = "Barre oblique / Slash (Shift + :)"
+"=" = "Signe Égal (touche à droite du -)"
+"(" = "Parenthèse ouvrante (touche 5 du rang supérieur)"
+")" = "Parenthèse fermante (touche - du rang supérieur)"
+"\"" = "Guillemet double (touche 3 du rang supérieur)"
+"'" = "Guillemet simple / Apostrophe (touche 4 du rang supérieur)"
+
+# --- Symboles Supplémentaires ---
+"°" = "Degré (Shift + )"
+"µ" = "Micro (Shift + *)"
+"£" = "Livre sterling (Shift + $)"
+"¤" = "Symbole monétaire universel (AltGr + $)"
 
 [numpad]
 description = "Pavé numérique"

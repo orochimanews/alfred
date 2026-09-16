@@ -23,7 +23,7 @@ auto_click = false                 # Si true, effectue un clic gauche au centre 
 # presser cette touche plaque le curseur très proche du bord correspondant.
 edge_snap_enabled = true
 edge_snap_key = "à"                # Touche de rapprochement (ex: "à", "0", "num_0")
-edge_offset = 10                   # Distance en pixels par rapport au bord (alias 'steps = 10')
+edge_offset = 40                   # Distance en pixels par rapport au bord (alias 'steps = 10')
 
 # Mappage des touches vers les coordonnées de case [colonne, ligne] (indexé à 0)
 # Pour une grille 3x3 sur clavier AZERTY :

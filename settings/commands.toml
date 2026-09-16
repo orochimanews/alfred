@@ -57,6 +57,42 @@ example = '''
 type = "middle_click"
 '''
 
+[commands.scroll]
+description = "Simule un défilement vertical de la molette de souris (positif vers le haut, négatif vers le bas)."
+syntax = '{ type = "scroll", delta = 3 } ou { type = "scroll", params = [3] }'
+parameters = [
+    { name = "delta", type = "int", default = 1, description = "Nombre de crans de défilement (ex: 3 pour monter, -3 pour descendre)" }
+]
+example = '''
+commands = [
+    { type = "scroll", delta = 3 }
+]
+'''
+
+[commands.mouse_down]
+description = "Enfonce et maintient un bouton de la souris (utile pour le Drag & Drop sans tension musculaire)."
+syntax = '{ type = "mouse_down", button = "left" }'
+parameters = [
+    { name = "button", type = "str", options = ["left", "right", "middle"], default = "left", description = "Bouton à maintenir" }
+]
+example = '''
+commands = [
+    { type = "mouse_down", button = "left" }
+]
+'''
+
+[commands.mouse_up]
+description = "Relâche un bouton de la souris précédemment maintenu enfoncé."
+syntax = '{ type = "mouse_up", button = "left" }'
+parameters = [
+    { name = "button", type = "str", options = ["left", "right", "middle"], default = "left", description = "Bouton à relâcher" }
+]
+example = '''
+commands = [
+    { type = "mouse_up", button = "left" }
+]
+'''
+
 [commands.jump]
 description = "Déplace instantanément le curseur de la souris à des coordonnées précises ou de manière relative."
 syntax = '{ type = "jump", x = 960, y = 540 }'

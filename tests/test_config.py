@@ -10,7 +10,11 @@ def test_config_manager_load_all():
 
     # Vérification config globale
     assert mgr.app_config.general.app_name == "Alfred"
-    assert mgr.app_config.general.special_mode_key == "!"
+    assert mgr.app_config.general.default_mode == "normal"
+    assert "normal" in mgr.app_config.modes
+    assert "special" in mgr.app_config.modes
+    assert "grid" in mgr.app_config.modes
+    assert mgr.app_config.modes["special"].name == "Spécial"
     assert mgr.app_config.ui.theme in ["dark", "light", "system"]
 
     # Vérification grille
@@ -31,8 +35,10 @@ def test_config_manager_load_all():
 
 
 def test_config_save_and_reload(tmp_path: Path):
+    from src.alfred.core.models import ModeConfig
     mgr = ConfigManager(base_dir=tmp_path)
-    mgr.app_config.general.special_mode_key = "f1"
+    mgr.app_config.general.default_mode = "special"
+    mgr.app_config.modes["custom"] = ModeConfig(name="Custom", description="Mode personnalisé")
     mgr.app_config.mouse.use_system_speed = False
     mgr.app_config.mouse.default_speed = 8
     mgr.app_config.ui.font_size = 16
@@ -43,7 +49,9 @@ def test_config_save_and_reload(tmp_path: Path):
     # Recharger dans une nouvelle instance
     mgr2 = ConfigManager(base_dir=tmp_path)
     loaded = mgr2.load_app_config()
-    assert loaded.general.special_mode_key == "f1"
+    assert loaded.general.default_mode == "special"
+    assert "custom" in loaded.modes
+    assert loaded.modes["custom"].name == "Custom"
     assert loaded.mouse.use_system_speed is False
     assert loaded.mouse.default_speed == 8
     assert loaded.ui.font_size == 16
