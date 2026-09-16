@@ -93,6 +93,19 @@ commands = [
 ]
 '''
 
+[commands.zoom]
+description = "Agrandit, réduit ou réinitialise le zoom de la fenêtre active via Ctrl + Pavé Numérique universel."
+syntax = '{ type = "zoom", direction = "in" } ou { type = "zoom", direction = "out" }'
+parameters = [
+    { name = "direction", type = "str", options = ["in", "out", "reset"], default = "in", description = "Direction du zoom ('in' pour agrandir, 'out' pour réduire, 'reset' pour 100%)" },
+    { name = "steps", type = "int", default = 1, description = "Nombre de crans de zoom à appliquer" }
+]
+example = '''
+commands = [
+    { type = "zoom", direction = "in" }
+]
+'''
+
 [commands.jump]
 description = "Déplace instantanément le curseur de la souris à des coordonnées précises ou de manière relative."
 syntax = '{ type = "jump", x = 960, y = 540 }'

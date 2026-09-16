@@ -77,6 +77,13 @@ def _normalize_params_from_list(cmd_type: str, items: list[Any]) -> dict[str, An
             return {"button": items[0]} if items else {"button": "left"}
         case "mouse_up":
             return {"button": items[0]} if items else {"button": "left"}
+        case "zoom":
+            res = {}
+            if len(items) >= 1:
+                res["direction"] = items[0]
+            if len(items) >= 2:
+                res["steps"] = items[1]
+            return res
         case _:
             return {"args": items}
 

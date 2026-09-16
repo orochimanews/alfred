@@ -22,6 +22,12 @@ SPI_GETMOUSESPEED = 0x0070
 SPI_SETMOUSESPEED = 0x0071
 SPIF_SENDCHANGE = 0x0002
 
+# Touches virtuelles pour les commandes zoom
+VK_CONTROL = 0x11
+VK_ADD = 0x6B
+VK_SUBTRACT = 0x6D
+VK_NUMPAD0 = 0x60
+
 
 class POINT(ctypes.Structure):
     _fields_ = [("x", wintypes.LONG), ("y", wintypes.LONG)]
@@ -104,6 +110,28 @@ class MouseController:
         """Simule un défilement de molette (positif = vers le haut, négatif = vers le bas)."""
         dw_data = int(clicks * WHEEL_DELTA)
         self._user32.mouse_event(MOUSEEVENTF_WHEEL, 0, 0, dw_data, 0)
+
+    def zoom(self, direction: str = "in", steps: int = 1) -> None:
+        """Simule un zoom (in / out / reset) via Ctrl + Pavé Numérique universel."""
+        d = direction.lower().strip()
+        if d in ("in", "up", "+", "plus", "avant"):
+            vk = VK_ADD
+        elif d in ("out", "down", "-", "minus", "arrière", "arriere"):
+            vk = VK_SUBTRACT
+        elif d in ("reset", "0"):
+            vk = VK_NUMPAD0
+        else:
+            vk = VK_ADD
+
+        self._user32.keybd_event(VK_CONTROL, 0, 0, 0)
+        try:
+            for _ in range(max(1, steps)):
+                self._user32.keybd_event(vk, 0, 0, 0)
+                time.sleep(0.01)
+                self._user32.keybd_event(vk, 0, 2, 0)
+                time.sleep(0.02)
+        finally:
+            self._user32.keybd_event(VK_CONTROL, 0, 2, 0)
 
     def get_speed(self) -> int:
         """Récupère la vitesse actuelle du curseur Windows (entre 1 et 20)."""

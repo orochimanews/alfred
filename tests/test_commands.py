@@ -239,6 +239,36 @@ def test_mouse_controller_scroll_and_down_up():
         mock_event.assert_called_with(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
 
 
+def test_command_engine_zoom():
+    state = StateManager(initial_mode="special")
+    cfg_mgr = ConfigManager()
+    grid_mgr = MagicMock()
+    engine = CommandsEngine(state, grid_mgr, cfg_mgr)
+
+    with patch("src.alfred.core.commands_engine.mouse") as mock_mouse:
+        cmd_in = Command(type="zoom", params={"direction": "in"})
+        engine.execute_command(cmd_in)
+        mock_mouse.zoom.assert_called_with(direction="in", steps=1)
+
+        cmd_out = Command(type="zoom", params={"direction": "out", "steps": 2})
+        engine.execute_command(cmd_out)
+        mock_mouse.zoom.assert_called_with(direction="out", steps=2)
+
+
+def test_mouse_controller_zoom():
+    from src.alfred.core.mouse import MouseController, VK_CONTROL, VK_ADD, VK_SUBTRACT
+
+    controller = MouseController()
+    with patch.object(controller._user32, "keybd_event") as mock_event:
+        controller.zoom(direction="in")
+        # Doit presser VK_CONTROL, puis VK_ADD down/up, puis VK_CONTROL up
+        mock_event.assert_any_call(VK_CONTROL, 0, 0, 0)
+        mock_event.assert_any_call(VK_ADD, 0, 0, 0)
+        mock_event.assert_any_call(VK_ADD, 0, 2, 0)
+        mock_event.assert_any_call(VK_CONTROL, 0, 2, 0)
+
+
+
 
 
 

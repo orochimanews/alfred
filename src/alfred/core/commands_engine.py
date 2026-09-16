@@ -119,6 +119,8 @@ class CommandsEngine:
                 self._cmd_mouse_down(params)
             case "mouse_up":
                 self._cmd_mouse_up(params)
+            case "zoom":
+                self._cmd_zoom(params)
             case _:
                 logger.warning("Commande de type inconnu ignorée : '%s'", cmd_type)
 
@@ -127,9 +129,20 @@ class CommandsEngine:
         if not keys:
             return
         if isinstance(keys, list):
-            hotkey_str = "+".join(str(k).strip() for k in keys)
+            cleaned = []
+            for k in keys:
+                s = str(k).strip()
+                if s == "+":
+                    cleaned.append("add")
+                elif s == "-" and any(m in [str(x).lower() for x in keys] for m in ("ctrl", "alt")):
+                    cleaned.append("subtract")
+                else:
+                    cleaned.append(s)
+            hotkey_str = "+".join(cleaned)
         else:
             hotkey_str = str(keys).strip()
+            if hotkey_str.endswith("++"):
+                hotkey_str = hotkey_str[:-1] + "add"
         keyboard.send(hotkey_str)
 
     def _cmd_click(self, params: dict) -> None:
@@ -156,6 +169,11 @@ class CommandsEngine:
     def _cmd_mouse_up(self, params: dict) -> None:
         button = str(params.get("button", "left"))
         mouse.mouse_up(button)
+
+    def _cmd_zoom(self, params: dict) -> None:
+        direction = str(params.get("direction", params.get("dir", "in"))).lower().strip()
+        steps = int(params.get("steps", params.get("clicks", 1)))
+        mouse.zoom(direction=direction, steps=steps)
 
     def _cmd_jump(self, params: dict) -> None:
         x = int(params.get("x", 0))
