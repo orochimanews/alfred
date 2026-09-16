@@ -95,26 +95,43 @@ class SettingsModal(ctk.CTkToplevel):
         self.combo_default_mode.set(cfg.general.default_mode)
         self.combo_default_mode.pack(side="right")
 
-        # --- Section 2: Vitesse Souris Windows ---
+        # --- Section 2: Vitesse Normale du Curseur ---
         sec_mouse = ctk.CTkFrame(container, corner_radius=6)
         sec_mouse.pack(fill="x", pady=6, padx=2)
 
         ctk.CTkLabel(
             sec_mouse,
-            text="SENSIBILITÉ SOURIS (1 - 20)",
+            text="VITESSE NORMALE DU CURSEUR",
             font=self.theme_manager.get_font(size_offset=-1, weight="bold"),
             text_color="gray"
         ).pack(anchor="w", padx=12, pady=(10, 4))
 
-        row_sp_def = ctk.CTkFrame(sec_mouse, fg_color="transparent")
-        row_sp_def.pack(fill="x", padx=12, pady=4)
+        row_sys_speed = ctk.CTkFrame(sec_mouse, fg_color="transparent")
+        row_sys_speed.pack(fill="x", padx=12, pady=4)
+
+        self.switch_use_sys_speed = ctk.CTkSwitch(
+            row_sys_speed,
+            text="Prendre la vitesse de Windows par défaut",
+            font=self.theme_manager.get_font(size_offset=-1),
+            command=self._on_toggle_sys_speed
+        )
+        if cfg.mouse.use_system_speed:
+            self.switch_use_sys_speed.select()
+        else:
+            self.switch_use_sys_speed.deselect()
+        self.switch_use_sys_speed.pack(side="left")
+
+        self.row_custom_speed = ctk.CTkFrame(sec_mouse, fg_color="transparent")
+        self.row_custom_speed.pack(fill="x", padx=12, pady=(4, 10))
+
         ctk.CTkLabel(
-            row_sp_def,
-            text="Vitesse Normale :",
+            self.row_custom_speed,
+            text="Vitesse Personnalisée :",
             font=self.theme_manager.get_font(size_offset=-1)
         ).pack(side="left")
+
         self.slider_def_speed = ctk.CTkSlider(
-            row_sp_def,
+            self.row_custom_speed,
             from_=1,
             to=20,
             number_of_steps=19,
@@ -123,38 +140,15 @@ class SettingsModal(ctk.CTkToplevel):
         )
         self.slider_def_speed.set(cfg.mouse.default_speed)
         self.slider_def_speed.pack(side="left", padx=8)
+
         self.lbl_def_speed_val = ctk.CTkLabel(
-            row_sp_def,
+            self.row_custom_speed,
             text=str(cfg.mouse.default_speed),
             width=30,
             font=self.theme_manager.get_font(size_offset=-1, weight="bold")
         )
         self.lbl_def_speed_val.pack(side="right")
-
-        row_sp_fast = ctk.CTkFrame(sec_mouse, fg_color="transparent")
-        row_sp_fast.pack(fill="x", padx=12, pady=(4, 10))
-        ctk.CTkLabel(
-            row_sp_fast,
-            text="Vitesse Accélérée :",
-            font=self.theme_manager.get_font(size_offset=-1)
-        ).pack(side="left")
-        self.slider_fast_speed = ctk.CTkSlider(
-            row_sp_fast,
-            from_=1,
-            to=20,
-            number_of_steps=19,
-            width=140,
-            command=self._on_fast_slider_changed
-        )
-        self.slider_fast_speed.set(cfg.mouse.fast_speed)
-        self.slider_fast_speed.pack(side="left", padx=8)
-        self.lbl_fast_speed_val = ctk.CTkLabel(
-            row_sp_fast,
-            text=str(cfg.mouse.fast_speed),
-            width=30,
-            font=self.theme_manager.get_font(size_offset=-1, weight="bold")
-        )
-        self.lbl_fast_speed_val.pack(side="right")
+        self._update_speed_slider_state()
 
         # --- Section 3: Interface Visuelle (Thème, Police) ---
         sec_ui = ctk.CTkFrame(container, corner_radius=6)
@@ -249,11 +243,20 @@ class SettingsModal(ctk.CTkToplevel):
             command=self._save_changes
         ).pack(side="right", padx=4, fill="x", expand=True)
 
+    def _on_toggle_sys_speed(self) -> None:
+        self._update_speed_slider_state()
+
+    def _update_speed_slider_state(self) -> None:
+        use_sys = bool(self.switch_use_sys_speed.get())
+        if use_sys:
+            self.slider_def_speed.configure(state="disabled")
+            self.lbl_def_speed_val.configure(text_color="gray")
+        else:
+            self.slider_def_speed.configure(state="normal")
+            self.lbl_def_speed_val.configure(text_color=("black", "white"))
+
     def _on_speed_slider_changed(self, val: float) -> None:
         self.lbl_def_speed_val.configure(text=str(int(val)))
-
-    def _on_fast_slider_changed(self, val: float) -> None:
-        self.lbl_fast_speed_val.configure(text=str(int(val)))
 
     def _on_font_slider_changed(self, val: float) -> None:
         self.lbl_font_val.configure(text=f"{int(val)} px")
@@ -265,8 +268,8 @@ class SettingsModal(ctk.CTkToplevel):
         # Récupération des valeurs
         new_key = self.entry_special_key.get().strip() or "!"
         new_default_mode = self.combo_default_mode.get().strip() or "normal"
+        new_use_sys_speed = bool(self.switch_use_sys_speed.get())
         new_def_speed = int(self.slider_def_speed.get())
-        new_fast_speed = int(self.slider_fast_speed.get())
 
         theme_map = {"Sombre": "dark", "Clair": "light", "Système": "system"}
         new_theme = theme_map.get(self.seg_theme.get(), "dark")
@@ -276,8 +279,8 @@ class SettingsModal(ctk.CTkToplevel):
         # Affectation
         cfg.general.special_mode_key = new_key
         cfg.general.default_mode = new_default_mode
+        cfg.mouse.use_system_speed = new_use_sys_speed
         cfg.mouse.default_speed = new_def_speed
-        cfg.mouse.fast_speed = new_fast_speed
         cfg.ui.theme = new_theme
         cfg.ui.font_size = new_font_size
         cfg.ui.always_on_top = new_always_top

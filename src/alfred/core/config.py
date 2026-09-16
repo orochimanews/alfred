@@ -72,9 +72,22 @@ class ConfigManager:
             )
 
             mouse_data = data.get("mouse", {})
+            raw_def = mouse_data.get("default_speed", 10)
+            raw_use_sys = mouse_data.get("use_system_speed")
+
+            if isinstance(raw_def, str) and raw_def.lower() in ("windows", "system", "auto"):
+                use_sys = True
+                def_spd = 10
+            else:
+                try:
+                    def_spd = int(raw_def)
+                except (ValueError, TypeError):
+                    def_spd = 10
+                use_sys = bool(raw_use_sys) if raw_use_sys is not None else True
+
             mouse = MouseConfig(
-                default_speed=int(mouse_data.get("default_speed", 10)),
-                fast_speed=int(mouse_data.get("fast_speed", 18)),
+                use_system_speed=use_sys,
+                default_speed=def_spd,
             )
 
             ui_data = data.get("ui", {})
@@ -106,8 +119,8 @@ class ConfigManager:
                     "toggle_special_mode": self.app_config.general.toggle_special_mode,
                 },
                 "mouse": {
+                    "use_system_speed": self.app_config.mouse.use_system_speed,
                     "default_speed": self.app_config.mouse.default_speed,
-                    "fast_speed": self.app_config.mouse.fast_speed,
                 },
                 "ui": {
                     "theme": self.app_config.ui.theme,

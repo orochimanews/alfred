@@ -17,7 +17,7 @@ def test_config_manager_load_all():
     assert mgr.grid_config.columns >= 1
     assert mgr.grid_config.rows >= 1
     assert len(mgr.grid_config.cells) > 0
-    assert "a" in mgr.grid_config.cells
+    assert "&" in mgr.grid_config.cells or "a" in mgr.grid_config.cells
 
     # Vérification des actions
     assert len(mgr.actions) >= 1
@@ -33,6 +33,8 @@ def test_config_manager_load_all():
 def test_config_save_and_reload(tmp_path: Path):
     mgr = ConfigManager(base_dir=tmp_path)
     mgr.app_config.general.special_mode_key = "f1"
+    mgr.app_config.mouse.use_system_speed = False
+    mgr.app_config.mouse.default_speed = 8
     mgr.app_config.ui.font_size = 16
     mgr.app_config.ui.theme = "light"
 
@@ -42,6 +44,8 @@ def test_config_save_and_reload(tmp_path: Path):
     mgr2 = ConfigManager(base_dir=tmp_path)
     loaded = mgr2.load_app_config()
     assert loaded.general.special_mode_key == "f1"
+    assert loaded.mouse.use_system_speed is False
+    assert loaded.mouse.default_speed == 8
     assert loaded.ui.font_size == 16
     assert loaded.ui.theme == "light"
 

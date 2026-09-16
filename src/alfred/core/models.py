@@ -191,9 +191,21 @@ class GridConfig:
         enabled = bool(grid_data.get("enabled", True))
         columns = max(1, int(grid_data.get("columns", 3)))
         rows = max(1, int(grid_data.get("rows", 3)))
-        active_modes = grid_data.get("active_modes", ["grid", "special"])
-        if isinstance(active_modes, str):
-            active_modes = [active_modes]
+
+        raw_modes = grid_data.get("active_modes", ["grid", "special"])
+        if isinstance(raw_modes, str):
+            active_modes = [m.strip() for m in raw_modes.split(",") if m.strip()]
+        elif isinstance(raw_modes, list):
+            parsed_modes = []
+            for item in raw_modes:
+                if isinstance(item, str):
+                    for m in item.split(","):
+                        if m.strip():
+                            parsed_modes.append(m.strip())
+            active_modes = parsed_modes
+        else:
+            active_modes = ["grid", "special"]
+
         exit_mode = bool(grid_data.get("exit_mode_after_jump", False))
         auto_click = bool(grid_data.get("auto_click", False))
 
@@ -201,7 +213,23 @@ class GridConfig:
         cells_data = data.get("cells", {})
         for key, coords in cells_data.items():
             if isinstance(coords, (list, tuple)) and len(coords) >= 2:
-                cells[str(key).lower()] = (int(coords[0]), int(coords[1]))
+                k = str(key).lower().strip()
+                cell_coords = (int(coords[0]), int(coords[1]))
+                cells[k] = cell_coords
+
+                # Générer automatiquement les alias pour les touches du pavé numérique
+                if k.startswith("num_") or k.startswith("num "):
+                    num_digit = k.replace("num_", "").replace("num ", "").strip()
+                    aliases = [
+                        f"num_{num_digit}",
+                        f"num {num_digit}",
+                        f"{num_digit} (pave num.)",
+                        f"{num_digit} (pavé num.)",
+                        num_digit,
+                    ]
+                    for alias in aliases:
+                        if alias not in cells:
+                            cells[alias] = cell_coords
 
         return cls(
             enabled=enabled,
@@ -227,8 +255,8 @@ class GeneralConfig:
 @dataclass
 class MouseConfig:
     """Paramètres du comportement souris."""
+    use_system_speed: bool = True
     default_speed: int = 10
-    fast_speed: int = 18
 
 
 @dataclass

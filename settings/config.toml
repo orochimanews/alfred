@@ -1,36 +1,18 @@
-# ==============================================================================
-# CONFIGURATION GÉNÉRALE D'ALFRED
-# ==============================================================================
-
 [general]
 app_name = "Alfred"
 default_mode = "normal"
-
-# Touche déclencheuse pour basculer ou activer le mode spécial
-# Exemples : "!", "f1", "caps_lock", "escape"
 special_mode_key = "!"
-
-# Mode spécial cible associé à la touche ci-dessus
 special_mode_name = "special"
-
-# Si true, la touche spéciale fait un toggle (bascule entre normal et special)
-# Si false, le mode spécial est temporaire ou nécessite une touche pour quitter
 toggle_special_mode = true
-
 [mouse]
-# Vitesse de la souris standard Windows (valeur de 1 à 20, 10 est la valeur par défaut Windows)
+# use_system_speed: si true (défaut), utilise la vitesse configurée sous Windows.
+# Si false, applique la sensibilité personnalisée 'default_speed' ci-dessous (1 à 20).
+use_system_speed = true
 default_speed = 10
-# Vitesse accélérée lorsqu'une commande mouse_speed accélère le curseur
-fast_speed = 18
 
 [ui]
-# Thème d'interface CustomTkinter : "dark", "light", ou "system"
 theme = "dark"
-# Couleur d'accentuation : "blue", "green", "dark-blue"
 color_theme = "blue"
-# Taille de la police de base dans l'interface (en pixels)
 font_size = 13
-# Fenêtre toujours au premier plan (stay on top)
-always_on_top = true
-# Démarrer minimisé dans la barre des tâches
+always_on_top = false
 start_minimized = false

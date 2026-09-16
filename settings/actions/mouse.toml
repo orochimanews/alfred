@@ -1,0 +1,27 @@
+[[actions]]
+name = "Clic Gauche"
+description = "Simule un clic du bouton gauche"
+modes = ["special"]
+trigger = ";"
+commands = [
+    { type = "click", params = ["left"] }
+]
+
+[[actions]]
+name = "Clic Milieu"
+description = "Simule un clic molette (bouton du milieu)"
+modes = ["special"]
+trigger = ":"
+commands = [
+    { type = "middle_click" }
+]
+
+[[actions]]
+name = "Vitesse Souris / Trackpad"
+description = "Bascule la vitesse du pointeur entre rapide (18) et normale (10)"
+modes = ["special"]
+trigger = "s"
+commands = [
+    { type = "mouse_speed", speed = 18, toggle = true }
+]
+

@@ -71,3 +71,52 @@ def test_command_engine_action_toggle():
     engine.execute_action(action)
     assert state.current_mode == "normal"
     assert action.current_state_index == 0
+
+
+def test_command_engine_mouse_speed_toggle_restores_original_speed():
+    state = StateManager(initial_mode="special")
+    cfg_mgr = ConfigManager()
+    grid_mgr = MagicMock()
+    engine = CommandsEngine(state, grid_mgr, cfg_mgr)
+
+    with patch("src.alfred.core.commands_engine.mouse") as mock_mouse:
+        # Vitesse Windows initiale personnalisée (ex: 14)
+        mock_mouse.get_speed.return_value = 14
+
+        cmd_toggle = Command(type="mouse_speed", params={"speed": 18, "toggle": True})
+
+        # 1er appel : activation de la vitesse rapide
+        engine.execute_command(cmd_toggle)
+        mock_mouse.get_speed.assert_called_once()
+        mock_mouse.set_speed.assert_called_with(18)
+        assert engine._is_fast_mouse_speed is True
+        assert engine._previous_mouse_speed == 14
+
+        # 2e appel : restauration de la vitesse initiale (14)
+        engine.execute_command(cmd_toggle)
+        mock_mouse.set_speed.assert_called_with(14)
+        assert engine._is_fast_mouse_speed is False
+
+
+def test_command_engine_mouse_speed_toggle_custom_default_speed():
+    state = StateManager(initial_mode="special")
+    cfg_mgr = ConfigManager()
+    cfg_mgr.app_config.mouse.use_system_speed = False
+    cfg_mgr.app_config.mouse.default_speed = 7
+    grid_mgr = MagicMock()
+    engine = CommandsEngine(state, grid_mgr, cfg_mgr)
+
+    with patch("src.alfred.core.commands_engine.mouse") as mock_mouse:
+        cmd_toggle = Command(type="mouse_speed", params={"speed": 18, "toggle": True})
+
+        # 1er appel : activation de la vitesse rapide
+        engine.execute_command(cmd_toggle)
+        mock_mouse.set_speed.assert_called_with(18)
+        assert engine._previous_mouse_speed == 7
+
+        # 2e appel : restauration de la vitesse personnalisée (7)
+        engine.execute_command(cmd_toggle)
+        mock_mouse.set_speed.assert_called_with(7)
+        assert engine._is_fast_mouse_speed is False
+
+

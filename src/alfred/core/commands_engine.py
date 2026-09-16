@@ -32,6 +32,7 @@ class CommandsEngine:
         self.grid_manager = grid_manager
         self.config_manager = config_manager
         self._is_fast_mouse_speed: bool = False
+        self._previous_mouse_speed: int | None = None
 
     def execute_action(self, action: Action, trigger_key: str = "") -> bool:
         """Exécute l'action complète (standard ou toggle) et journalise l'événement."""
@@ -147,7 +148,7 @@ class CommandsEngine:
             self.state_manager.set_mode(target)
 
     def _cmd_mouse_speed(self, params: dict) -> None:
-        cfg = self.config_manager.app_config.mouse
+        cfg = getattr(self.config_manager.app_config, "mouse", None)
         is_toggle = bool(params.get("toggle", False))
         target_speed = params.get("speed")
         step = params.get("step")
@@ -158,16 +159,27 @@ class CommandsEngine:
             return
 
         if is_toggle:
-            fast_speed = int(target_speed or cfg.fast_speed)
-            default_speed = cfg.default_speed
+            fast_speed = int(target_speed or 18)
+
             if not self._is_fast_mouse_speed:
+                # Mémoriser la sensibilité de retour (soit Windows en direct, soit valeur configurée)
+                if cfg and not cfg.use_system_speed:
+                    self._previous_mouse_speed = cfg.default_speed
+                else:
+                    self._previous_mouse_speed = mouse.get_speed()
+
                 mouse.set_speed(fast_speed)
                 self._is_fast_mouse_speed = True
-                logger.info("Vitesse souris passée en mode rapide : %d", fast_speed)
+                logger.info("Vitesse curseur activée : %d (vitesse normale mémorisée : %d)", fast_speed, self._previous_mouse_speed)
             else:
-                mouse.set_speed(default_speed)
+                # Restaurer la vitesse normale
+                restore_speed = self._previous_mouse_speed
+                if restore_speed is None:
+                    restore_speed = cfg.default_speed if (cfg and not cfg.use_system_speed) else mouse.get_speed()
+
+                mouse.set_speed(restore_speed)
                 self._is_fast_mouse_speed = False
-                logger.info("Vitesse souris restaurée en mode normal : %d", default_speed)
+                logger.info("Vitesse curseur restaurée : %d", restore_speed)
         elif target_speed is not None:
             mouse.set_speed(int(target_speed))
 
