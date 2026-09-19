@@ -126,88 +126,41 @@ def test_alfred_app_minimize_and_restore_tray():
                 mock_deiconify.assert_called_once()
                 mock_lift.assert_called_once()
                 mock_focus.assert_called_once()
-        finally:
-            try:
-                app.close()
-            except Exception:
-                pass
-
-
-def test_dashboard_start_minimized_checkbox():
-    config_mgr = ConfigManager()
-    config_mgr.load_all()
-    assert config_mgr.app_config.ui.start_minimized is True
-
-    state_mgr = StateManager(initial_mode="normal")
-    grid_mgr = GridManager(config=config_mgr.grid_config, state_manager=state_mgr)
-    commands_engine = CommandsEngine(
-        state_manager=state_mgr,
-        grid_manager=grid_mgr,
-        config_manager=config_mgr,
-    )
-    hook_service = MagicMock()
-
-    with patch("pystray.Icon"):
-        app = AlfredApp(
-            config_manager=config_mgr,
-            state_manager=state_mgr,
-            commands_engine=commands_engine,
-            grid_manager=grid_mgr,
-            hook_service=hook_service,
-        )
-        try:
+            # Test de la case à cocher Démarrer minimisé sur le Dashboard
             dash = app.views["dashboard"]
             assert hasattr(dash, "chk_start_minimized")
             assert dash.chk_start_minimized.get() == 1
 
-            # Simuler décochage
-            dash.chk_start_minimized.deselect()
-            dash._on_toggle_start_minimized()
-            assert config_mgr.app_config.ui.start_minimized is False
+            with patch.object(config_mgr, "save_app_config") as mock_save:
+                dash.chk_start_minimized.deselect()
+                dash._on_toggle_start_minimized()
+                assert config_mgr.app_config.ui.start_minimized is False
+                mock_save.assert_called_once()
 
-            # Simuler recochage
-            dash.chk_start_minimized.select()
-            dash._on_toggle_start_minimized()
-            assert config_mgr.app_config.ui.start_minimized is True
+                dash.chk_start_minimized.select()
+                dash._on_toggle_start_minimized()
+                assert config_mgr.app_config.ui.start_minimized is True
+
+            # Test de la case à cocher Démarrer minimisé dans SettingsModal
+            from src.alfred.ui.views.settings_modal import SettingsModal
+            from src.alfred.ui.theme import ThemeManager
+            theme_mgr = ThemeManager(config_mgr.app_config.ui)
+            modal = SettingsModal(
+                parent=app,
+                config_manager=config_mgr,
+                theme_manager=theme_mgr,
+            )
+            assert hasattr(modal, "chk_start_minimized")
+            assert modal.chk_start_minimized.get() == 1
+            with patch.object(config_mgr, "save_app_config"):
+                modal.chk_start_minimized.deselect()
+                modal._save_changes()
+                assert config_mgr.app_config.ui.start_minimized is False
+                # Restaurer pour la fin du test
+                config_mgr.app_config.ui.start_minimized = True
         finally:
             try:
                 app.close()
             except Exception:
                 pass
-
-
-def test_settings_modal_start_minimized_checkbox():
-    from src.alfred.ui.views.settings_modal import SettingsModal
-    from src.alfred.ui.theme import ThemeManager
-
-    config_mgr = ConfigManager()
-    config_mgr.load_all()
-    config_mgr.app_config.ui.start_minimized = True
-
-    theme_mgr = ThemeManager(config_mgr.app_config.ui)
-
-    import customtkinter as ctk
-    root = ctk.CTk()
-    root.withdraw()
-    try:
-        modal = SettingsModal(
-            parent=root,
-            config_manager=config_mgr,
-            theme_manager=theme_mgr,
-        )
-        assert hasattr(modal, "chk_start_minimized")
-        assert modal.chk_start_minimized.get() == 1
-
-        modal.chk_start_minimized.deselect()
-        modal._save_changes()
-        assert config_mgr.app_config.ui.start_minimized is False
-
-        # Réactiver pour laisser l'état propre
-        config_mgr.app_config.ui.start_minimized = True
-        config_mgr.save_app_config()
-    finally:
-        try:
-            root.destroy()
-        except Exception:
-            pass
 
