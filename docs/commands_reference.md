@@ -132,3 +132,18 @@ Active ou bascule le mode Nudge : les déplacements physiques de la souris ou du
   - `toggle` (`bool`, défaut: `true`) : Bascule l'état on/off.
   - `threshold` (`int`, défaut: `4`) : Seuil de mouvement physique minimal en pixels.
   - `cooldown` (`float`, défaut: `0.08`) : Délai minimal en secondes entre deux bonds.
+
+---
+
+### 12. `move_boost`
+Bascule ou modifie l'état de boost (vitesse rapide / turbo) pour les déplacements curseur au clavier configurés dans `settings/move.toml`.
+- **Paramètres** :
+  - `toggle` (`bool`, défaut: `true`) : Alterne l'activation du boost.
+  - `active` (`bool`, optionnel) : Définit explicitement l'état actif ou inactif du boost.
+- **Exemple** :
+  ```toml
+  [[commands]]
+  type = "move_boost"
+  toggle = true
+  ```
+

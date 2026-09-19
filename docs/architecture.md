@@ -41,6 +41,7 @@ Alfred est conçu selon une architecture découplée, séparant strictement la l
 |  - Séquenceur de commandes (sleep, hotkey, click, app...)   |
 |  - Gestion des toggles d'état                               |
 |  - Système de Grille Souris (src/alfred/core/grid.py)       |
+|  - Déplacement Dynamique Curseur (src/alfred/core/move.py)  |
 |  - Contrôle Windows API (src/alfred/core/mouse.py)          |
 +-------------------------------------------------------------+
                                ^

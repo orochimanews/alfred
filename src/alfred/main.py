@@ -127,6 +127,7 @@ def configure_windows_process() -> None:
 from src.alfred.core.config import ConfigManager
 from src.alfred.core.state import StateManager
 from src.alfred.core.grid import GridManager
+from src.alfred.core.move import MoveManager
 from src.alfred.core.commands_engine import CommandsEngine
 from src.alfred.core.hook import KeyboardHookService
 from src.alfred.core.mouse import mouse
@@ -151,17 +152,24 @@ def main() -> None:
     state_mgr = StateManager(initial_mode=default_mode)
 
     # 3. Initialisation des sous-systèmes
+    move_mgr = MoveManager(
+        config=config_mgr.move_config,
+        mouse_controller=mouse,
+        state_manager=state_mgr,
+    )
     grid_mgr = GridManager(config=config_mgr.grid_config, state_manager=state_mgr)
     commands_engine = CommandsEngine(
         state_manager=state_mgr,
         grid_manager=grid_mgr,
         config_manager=config_mgr,
+        move_manager=move_mgr,
     )
     hook_service = KeyboardHookService(
         state_manager=state_mgr,
         config_manager=config_mgr,
         commands_engine=commands_engine,
         grid_manager=grid_mgr,
+        move_manager=move_mgr,
     )
 
     # 4. Démarrage du hook clavier
@@ -176,6 +184,7 @@ def main() -> None:
             logger.info("Arrêt du mode headless...")
         finally:
             hook_service.stop()
+            move_mgr.stop()
             mouse.restore_initial_speed()
             mouse.stop_nudge_mode()
         return
@@ -189,6 +198,7 @@ def main() -> None:
             commands_engine=commands_engine,
             grid_manager=grid_mgr,
             hook_service=hook_service,
+            move_manager=move_mgr,
         )
 
         app.protocol("WM_DELETE_WINDOW", app.close)
@@ -198,6 +208,7 @@ def main() -> None:
         logger.error("Erreur d'exécution de l'application : %s", err, exc_info=True)
     finally:
         hook_service.stop()
+        move_mgr.stop()
         mouse.restore_initial_speed()
         mouse.stop_nudge_mode()
 

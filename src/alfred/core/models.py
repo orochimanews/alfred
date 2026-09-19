@@ -93,6 +93,13 @@ def _normalize_params_from_list(cmd_type: str, items: list[Any]) -> dict[str, An
             if len(items) >= 2:
                 res["steps"] = items[1]
             return res
+        case "move_boost" | "move_speed_boost":
+            res = {}
+            if len(items) >= 1:
+                res["toggle"] = items[0]
+            if len(items) >= 2:
+                res["multiplier"] = items[1]
+            return res if res else {"toggle": True}
         case _:
             return {"args": items}
 
@@ -343,6 +350,167 @@ class GridConfig:
             subgrid_exit_after_jump=subgrid_exit_after_jump,
             subgrid_toggle_keys=subgrid_toggle_keys,
         )
+
+
+def generate_key_aliases(key: str | list[str]) -> set[str]:
+    """Génère tous les alias courants pour une touche (chiffre, pavé numérique, séparateurs)."""
+    keys = key if isinstance(key, list) else [key]
+    aliases: set[str] = set()
+    for raw in keys:
+        k = str(raw).lower().strip()
+        if not k:
+            continue
+        aliases.add(k)
+        if k in ("0", "num_0", "num 0", "à"):
+            aliases.update(["0", "num_0", "num 0", "0 (pavé num.)", "0 (pave num.)", "à"])
+        elif k.startswith("num_") or k.startswith("num "):
+            digit = k.replace("num_", "").replace("num ", "").strip()
+            aliases.update([
+                f"num_{digit}",
+                f"num {digit}",
+                f"{digit} (pave num.)",
+                f"{digit} (pavé num.)",
+                digit,
+            ])
+        elif k.isdigit():
+            aliases.update([
+                f"num_{k}",
+                f"num {k}",
+                f"{k} (pave num.)",
+                f"{k} (pavé num.)",
+                k,
+            ])
+    return aliases
+
+
+@dataclass
+class MoveConfig:
+    """Configuration du déplacement dynamique du curseur au clavier."""
+    enabled: bool = True
+    active_modes: list[str] = field(default_factory=lambda: ["special"])
+
+    key_up: str = "8"
+    key_down: str = "5"
+    key_left: str = "4"
+    key_right: str = "6"
+
+    key_up_left: str = "7"
+    key_up_right: str = "9"
+    key_down_left: str = "1"
+    key_down_right: str = "3"
+
+    initial_speed: float = 300.0
+    max_speed: float = 1800.0
+    acceleration_enabled: bool = True
+    acceleration_time: float = 1.2
+    curve: str = "ease_in_out"
+    update_interval_ms: int = 16
+
+    boost_enabled: bool = True
+    boost_toggle_key: str = "0"
+    boost_multiplier: float = 2.5
+    start_boosted: bool = False
+
+    # Alias résolus pour test rapide
+    keys_up: set[str] = field(default_factory=set)
+    keys_down: set[str] = field(default_factory=set)
+    keys_left: set[str] = field(default_factory=set)
+    keys_right: set[str] = field(default_factory=set)
+    keys_up_left: set[str] = field(default_factory=set)
+    keys_up_right: set[str] = field(default_factory=set)
+    keys_down_left: set[str] = field(default_factory=set)
+    keys_down_right: set[str] = field(default_factory=set)
+    keys_boost: set[str] = field(default_factory=set)
+    all_move_keys: set[str] = field(default_factory=set)
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> MoveConfig:
+        """Parse la table [move] du fichier settings/move.toml."""
+        move_data = data.get("move", data)
+        enabled = bool(move_data.get("enabled", True))
+
+        raw_modes = move_data.get("active_modes", ["special"])
+        if isinstance(raw_modes, str):
+            active_modes = [raw_modes.lower().strip()]
+        else:
+            active_modes = [str(m).lower().strip() for m in raw_modes]
+
+        key_up = str(move_data.get("key_up", "8")).strip()
+        key_down = str(move_data.get("key_down", "5")).strip()
+        key_left = str(move_data.get("key_left", "4")).strip()
+        key_right = str(move_data.get("key_right", "6")).strip()
+
+        key_up_left = str(move_data.get("key_up_left", "7")).strip()
+        key_up_right = str(move_data.get("key_up_right", "9")).strip()
+        key_down_left = str(move_data.get("key_down_left", "1")).strip()
+        key_down_right = str(move_data.get("key_down_right", "3")).strip()
+
+        initial_speed = max(10.0, float(move_data.get("initial_speed", 300.0)))
+        max_speed = max(initial_speed, float(move_data.get("max_speed", 1800.0)))
+        acceleration_enabled = bool(move_data.get("acceleration_enabled", True))
+        acceleration_time = max(0.05, float(move_data.get("acceleration_time", 1.2)))
+        curve = str(move_data.get("curve", "ease_in_out")).lower().strip()
+        update_interval_ms = max(5, int(move_data.get("update_interval_ms", 16)))
+
+        boost_enabled = bool(move_data.get("boost_enabled", True))
+        boost_toggle_key = str(move_data.get("boost_toggle_key", "0")).strip()
+        boost_multiplier = max(1.0, float(move_data.get("boost_multiplier", 2.5)))
+        start_boosted = bool(move_data.get("start_boosted", False))
+
+        keys_up = generate_key_aliases(key_up)
+        keys_down = generate_key_aliases(key_down)
+        keys_left = generate_key_aliases(key_left)
+        keys_right = generate_key_aliases(key_right)
+        keys_up_left = generate_key_aliases(key_up_left)
+        keys_up_right = generate_key_aliases(key_up_right)
+        keys_down_left = generate_key_aliases(key_down_left)
+        keys_down_right = generate_key_aliases(key_down_right)
+        keys_boost = generate_key_aliases(boost_toggle_key)
+
+        all_move_keys = (
+            keys_up
+            | keys_down
+            | keys_left
+            | keys_right
+            | keys_up_left
+            | keys_up_right
+            | keys_down_left
+            | keys_down_right
+        )
+
+        return cls(
+            enabled=enabled,
+            active_modes=active_modes,
+            key_up=key_up,
+            key_down=key_down,
+            key_left=key_left,
+            key_right=key_right,
+            key_up_left=key_up_left,
+            key_up_right=key_up_right,
+            key_down_left=key_down_left,
+            key_down_right=key_down_right,
+            initial_speed=initial_speed,
+            max_speed=max_speed,
+            acceleration_enabled=acceleration_enabled,
+            acceleration_time=acceleration_time,
+            curve=curve,
+            update_interval_ms=update_interval_ms,
+            boost_enabled=boost_enabled,
+            boost_toggle_key=boost_toggle_key,
+            boost_multiplier=boost_multiplier,
+            start_boosted=start_boosted,
+            keys_up=keys_up,
+            keys_down=keys_down,
+            keys_left=keys_left,
+            keys_right=keys_right,
+            keys_up_left=keys_up_left,
+            keys_up_right=keys_up_right,
+            keys_down_left=keys_down_left,
+            keys_down_right=keys_down_right,
+            keys_boost=keys_boost,
+            all_move_keys=all_move_keys,
+        )
+
 
 
 @dataclass

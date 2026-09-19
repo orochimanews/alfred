@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from src.alfred.core.state import StateManager
     from src.alfred.core.grid import GridManager
     from src.alfred.core.config import ConfigManager
+    from src.alfred.core.move import MoveManager
 
 logger = logging.getLogger(__name__)
 
@@ -28,10 +29,12 @@ class CommandsEngine:
         state_manager: StateManager,
         grid_manager: GridManager,
         config_manager: ConfigManager,
+        move_manager: MoveManager | None = None,
     ) -> None:
         self.state_manager = state_manager
         self.grid_manager = grid_manager
         self.config_manager = config_manager
+        self.move_manager = move_manager
         self._is_fast_mouse_speed: bool = False
         self._previous_mouse_speed: int | None = None
 
@@ -129,8 +132,22 @@ class CommandsEngine:
                 self._cmd_mouse_up(params)
             case "zoom":
                 self._cmd_zoom(params)
+            case "move_boost" | "move_speed_boost":
+                self._cmd_move_boost(params)
             case _:
                 logger.warning("Commande de type inconnu ignorée : '%s'", cmd_type)
+
+    def _cmd_move_boost(self, params: dict) -> None:
+        """Bascule ou modifie l'état de boost du déplacement clavier."""
+        if not self.move_manager:
+            return
+        if "active" in params:
+            self.move_manager.set_boost(bool(params["active"]))
+        elif "toggle" in params:
+            if bool(params["toggle"]):
+                self.move_manager.toggle_boost()
+        else:
+            self.move_manager.toggle_boost()
 
     def _cmd_subgrid(self, params: dict) -> None:
         toggle = bool(params.get("toggle", True))

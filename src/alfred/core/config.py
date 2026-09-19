@@ -16,6 +16,7 @@ from src.alfred.core.models import (
     MouseConfig,
     UIConfig,
     GridConfig,
+    MoveConfig,
     Action,
 )
 
@@ -45,11 +46,13 @@ class ConfigManager:
         self.actions_dir = self.settings_dir / "actions"
         self.config_path = self.settings_dir / "config.toml"
         self.grid_path = self.settings_dir / "grid.toml"
+        self.move_path = self.settings_dir / "move.toml"
         self.commands_path = self.settings_dir / "commands.toml"
         self.keys_path = self.settings_dir / "keys.toml"
 
         self.app_config: AppConfig = AppConfig()
         self.grid_config: GridConfig = GridConfig()
+        self.move_config: MoveConfig = MoveConfig()
         self.actions: list[Action] = []
         self.commands_reference: dict[str, Any] = {}
         self.keys_reference: dict[str, Any] = {}
@@ -58,6 +61,7 @@ class ConfigManager:
         """Charge l'ensemble de la configuration depuis le système de fichiers."""
         self.load_app_config()
         self.load_grid_config()
+        self.load_move_config()
         self.load_actions()
         self.load_references()
 
@@ -194,6 +198,22 @@ class ConfigManager:
             self.grid_config = GridConfig()
 
         return self.grid_config
+
+    def load_move_config(self) -> MoveConfig:
+        """Charge settings/move.toml."""
+        if not self.move_path.exists():
+            self.move_config = MoveConfig()
+            return self.move_config
+
+        try:
+            with open(self.move_path, "rb") as f:
+                data = tomllib.load(f)
+            self.move_config = MoveConfig.from_dict(data)
+        except Exception as err:
+            logger.error("Erreur lors du chargement de %s: %s", self.move_path, err)
+            self.move_config = MoveConfig()
+
+        return self.move_config
 
     def load_actions(self) -> list[Action]:
         """Scanne le répertoire settings/actions/ et charge toutes les actions TOML valides.

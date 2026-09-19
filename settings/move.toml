@@ -1,0 +1,65 @@
+# ==============================================================================
+# CONFIGURATION DU DÉPLACEMENT DYNAMIQUE DU CURSEUR (KEYBOARD MOVE)
+# ==============================================================================
+# Permet de déplacer le curseur de la souris directement via des touches du clavier.
+# Le déplacement est fluide (60 FPS) et dynamique avec accélération progressive
+# tant que la touche reste enfoncée, ainsi qu'une touche de bascule rapide (boost).
+
+[move]
+# Activation globale de la fonctionnalité
+enabled = true
+
+# Modes dans lesquels les touches de déplacement sont actives
+# Exemples : ["special"], ["special", "grid"], ou ["all"]
+active_modes = ["special"]
+
+# ------------------------------------------------------------------------------
+# Mappage des touches de direction
+# ------------------------------------------------------------------------------
+# Supporte les chiffres simples ("8"), le pavé numérique ("num_8", etc.),
+# ainsi que les noms de touches standards (voir settings/keys.toml).
+# Les alias du pavé numérique sont automatiquement détectés.
+
+key_up = "8"              # Déplacement vers le haut (ex: Pavé numérique 8)
+key_down = "5"            # Déplacement vers le bas (ex: Pavé numérique 5)
+key_left = "4"            # Déplacement vers la gauche (ex: Pavé numérique 4)
+key_right = "6"           # Déplacement vers la droite (ex: Pavé numérique 6)
+
+# Touches diagonales directes (optionnel)
+# Note : presser deux touches orthogonales simultanément (ex: 4 + 8) déplace
+# également en diagonale de façon fluide et normalisée.
+key_up_left = "7"         # Diagonale haut-gauche
+key_up_right = "9"        # Diagonale haut-droite
+key_down_left = "1"       # Diagonale bas-gauche
+key_down_right = "3"      # Diagonale bas-droite
+
+# ------------------------------------------------------------------------------
+# Dynamique & Accélération
+# ------------------------------------------------------------------------------
+# Vitesse initiale au moment de l'appui (en pixels par seconde)
+# Une valeur modérée permet un contrôle précis au pixel près lors d'un tap bref.
+initial_speed = 300.0
+
+# Vitesse maximale atteignable lorsque la touche reste maintenue (en pixels/s)
+max_speed = 1800.0
+
+# Activer l'accélération progressive (true = monte de initial_speed à max_speed)
+acceleration_enabled = true
+
+# Durée en secondes pour atteindre la vitesse maximale depuis la vitesse initiale
+acceleration_time = 1.2
+
+# Type de courbe d'accélération : "linear", "ease_in", "ease_out", "ease_in_out"
+curve = "ease_in_out"
+
+# Intervalle de rafraîchissement en millisecondes (~16 ms = 60 FPS)
+update_interval_ms = 16
+
+# ------------------------------------------------------------------------------
+# Action Toggle Vitesse Rapide / Boost (Turbo)
+# ------------------------------------------------------------------------------
+# Permet de basculer instantanément la vitesse avec une touche configurable
+boost_enabled = true
+boost_toggle_key = "0"    # Touche de bascule boost (ex: "0", "num_0")
+boost_multiplier = 2.5    # Multiplicateur appliqué à la vitesse quand le boost est actif
+start_boosted = false     # État initial au démarrage de l'application

@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from src.alfred.core.config import ConfigManager
     from src.alfred.core.commands_engine import CommandsEngine
     from src.alfred.core.grid import GridManager
+    from src.alfred.core.move import MoveManager
 
 logger = logging.getLogger(__name__)
 
@@ -56,13 +57,18 @@ class KeyboardHookService:
         config_manager: ConfigManager,
         commands_engine: CommandsEngine,
         grid_manager: GridManager,
+        move_manager: MoveManager | None = None,
     ) -> None:
         self.state_manager = state_manager
         self.config_manager = config_manager
         self.commands_engine = commands_engine
         self.grid_manager = grid_manager
+        self.move_manager = move_manager
         self._hook_installed: bool = False
         self._pressed_keys: set[str] = set()
+
+        # Surveiller les changements de mode pour couper les mouvements en cours si nécessaire
+        self.state_manager.subscribe(self._on_state_event)
 
     def start(self) -> None:
         """Démarre l'écoute globale du clavier."""
@@ -85,6 +91,13 @@ class KeyboardHookService:
         self._hook_installed = False
         logger.info("Hook clavier global désactivé.")
 
+    def _on_state_event(self, event_type: str, data: any) -> None:
+        """Surveille les changements de mode applicatif."""
+        if event_type == "mode_changed" and self.move_manager:
+            move_cfg = self.config_manager.move_config
+            if data not in move_cfg.active_modes and "all" not in move_cfg.active_modes:
+                self.move_manager.stop_all_movement()
+
     def _on_key_event(self, event: keyboard.KeyboardEvent) -> bool:
         """Callback appelé pour chaque frappe système.
         Retourne False pour supprimer la touche (l'intercepter), True pour la laisser passer.
@@ -101,10 +114,19 @@ class KeyboardHookService:
                 if "!" not in candidate_keys:
                     candidate_keys.append("!")
 
-            # Si c'est un relâchement de touche, nettoyer les touches maintenues et laisser passer
+            # Si c'est un relâchement de touche, nettoyer les touches maintenues et notifier move_manager
             if event.event_type == keyboard.KEY_UP:
                 for k in candidate_keys:
                     self._pressed_keys.discard(k)
+
+                if self.move_manager and self.state_manager.is_hook_enabled:
+                    current_mode = self.state_manager.current_mode
+                    move_cfg = self.config_manager.move_config
+                    if move_cfg.enabled and (current_mode in move_cfg.active_modes or "all" in move_cfg.active_modes):
+                        for cand in candidate_keys:
+                            if self.move_manager.is_move_key(cand):
+                                self.move_manager.release_key(cand)
+                                return False
                 return True
 
             # Événement KEY_DOWN
@@ -145,6 +167,21 @@ class KeyboardHookService:
                 )
                 # Supprimer la touche pour éviter de taper le caractère spécial
                 return False
+
+            # 2. Vérification du déplacement dynamique au clavier (Move)
+            move_cfg = self.config_manager.move_config
+            if self.move_manager and move_cfg.enabled and (current_mode in move_cfg.active_modes or "all" in move_cfg.active_modes):
+                for cand in candidate_keys:
+                    # Touche Toggle Boost
+                    if self.move_manager.is_boost_key(cand):
+                        if not is_repeat:
+                            self.move_manager.toggle_boost()
+                        return False
+
+                    # Touche de déplacement
+                    if self.move_manager.is_move_key(cand):
+                        self.move_manager.press_key(cand)
+                        return False
 
             # 2. Vérification de la grille souris si le mode actif fait partie des active_modes
             grid_cfg = self.config_manager.grid_config

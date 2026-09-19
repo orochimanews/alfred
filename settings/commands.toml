@@ -216,3 +216,17 @@ type = "grid_cell"
 col = 2
 row = 1
 '''
+
+[commands.move_boost]
+description = "Bascule ou définit l'état du boost de vitesse rapide pour les déplacements clavier (settings/move.toml)."
+syntax = '{ type = "move_boost", toggle = true }'
+parameters = [
+    { name = "toggle", type = "bool", default = true, description = "Si true, alterne entre vitesse normale et vitesse boostée" },
+    { name = "active", type = "bool", optional = true, description = "Active (true) ou désactive (false) directement le boost" }
+]
+example = '''
+[[commands]]
+type = "move_boost"
+toggle = true
+'''
+

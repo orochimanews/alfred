@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from src.alfred.core.commands_engine import CommandsEngine
     from src.alfred.core.grid import GridManager
     from src.alfred.core.hook import KeyboardHookService
+    from src.alfred.core.move import MoveManager
 
 logger = logging.getLogger(__name__)
 
@@ -70,6 +71,7 @@ class AlfredApp(ctk.CTk):
         commands_engine: CommandsEngine,
         grid_manager: GridManager,
         hook_service: KeyboardHookService,
+        move_manager: MoveManager | None = None,
     ) -> None:
         super().__init__()
 
@@ -78,6 +80,7 @@ class AlfredApp(ctk.CTk):
         self.commands_engine = commands_engine
         self.grid_manager = grid_manager
         self.hook_service = hook_service
+        self.move_manager = move_manager
 
         self.theme_manager = ThemeManager(self.config_manager.app_config.ui)
 
@@ -175,6 +178,8 @@ class AlfredApp(ctk.CTk):
             self.tray_service.stop()
         if hasattr(self, "hook_service") and self.hook_service:
             self.hook_service.stop()
+        if hasattr(self, "move_manager") and self.move_manager:
+            self.move_manager.stop()
         from src.alfred.core.mouse import mouse
         mouse.restore_initial_speed()
         self.destroy()
@@ -346,6 +351,7 @@ class AlfredApp(ctk.CTk):
                 self.config_manager,
                 self.theme_manager,
                 on_minimize=self.minimize_to_tray,
+                move_manager=self.move_manager,
             ),
             "actions": ActionsView(
                 self.content_container,
@@ -430,6 +436,8 @@ class AlfredApp(ctk.CTk):
         """Recharge l'ensemble des fichiers TOML sans redémarrer l'application."""
         self.config_manager.load_all()
         self.grid_manager.update_config(self.config_manager.grid_config)
+        if hasattr(self, "move_manager") and self.move_manager:
+            self.move_manager.update_config(self.config_manager.move_config)
         self._update_close_shortcut_binding()
 
         # Rafraîchir les vues

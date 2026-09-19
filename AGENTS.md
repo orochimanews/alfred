@@ -34,6 +34,7 @@ alfred/
 │   ├── commands.toml          <-- Notice descriptive de toutes les commandes
 │   ├── keys.toml              <-- Notice des noms de touches (AZERTY / Anglais)
 │   ├── grid.toml              <-- Configuration de la grille écran (cases, touches)
+│   ├── move.toml              <-- Configuration des déplacements dynamiques curseur
 │   └── actions/               <-- Actions individuelles configurables
 │       ├── browser_new_tab.toml
 │       ├── onenote_open.toml
@@ -63,6 +64,7 @@ alfred/
 │   │   ├── mouse.py           <-- Interaction Windows API (curseur, clics, vitesse)
 │   │   ├── commands_engine.py <-- Moteur d'exécution des commandes et macros
 │   │   ├── grid.py            <-- Calculateur de grille d'écran
+│   │   ├── move.py            <-- Déplacement dynamique curseur clavier
 │   │   └── hook.py            <-- Intercepteur clavier système (suppression & routing)
 │   │
 │   └── ui/                    <-- Interface graphique CustomTkinter
@@ -79,6 +81,7 @@ alfred/
     ├── test_models.py
     ├── test_state.py
     ├── test_grid.py
+    ├── test_move.py
     └── test_commands.py
 ```
 
