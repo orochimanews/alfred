@@ -545,7 +545,7 @@ class UIConfig:
     color_theme: str = "blue"
     font_size: int = 13
     always_on_top: bool = True
-    start_minimized: bool = False
+    start_minimized: bool = True
 
 
 @dataclass

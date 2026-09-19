@@ -87,13 +87,17 @@ class DashboardView(ctk.CTkFrame):
         )
         lbl_hint.pack(side="left", padx=(0, 10))
 
-        # Bouton Minimiser plus grand dans la ligne avec Mode à droite
+        # Sous-bloc Minimiser & Option "Démarrer minimisé"
+        min_box = ctk.CTkFrame(right_panel, fg_color="transparent")
+        min_box.pack(side="left")
+
+        # Bouton Minimiser dans la ligne avec Mode à droite
         self.btn_minimize = ctk.CTkButton(
-            right_panel,
+            min_box,
             text="📥 Minimiser",
             width=115,
-            height=32,
-            font=self.theme_manager.get_font(size_offset=0, weight="bold"),
+            height=28,
+            font=self.theme_manager.get_font(size_offset=-1, weight="bold"),
             fg_color=("gray75", "gray25"),
             hover_color=("gray65", "gray35"),
             text_color=("gray10", "gray95"),
@@ -101,8 +105,23 @@ class DashboardView(ctk.CTkFrame):
             border_color=("gray60", "gray38"),
             command=self._on_minimize_clicked,
         )
-        self.btn_minimize.pack(side="left")
+        self.btn_minimize.pack(anchor="e")
         ToolTip(self.btn_minimize, "Réduire dans la zone de notification (Systray)")
+
+        self.chk_start_minimized = ctk.CTkCheckBox(
+            min_box,
+            text="Démarrer minimisé",
+            font=self.theme_manager.get_font(size_offset=-2),
+            checkbox_width=16,
+            checkbox_height=16,
+            command=self._on_toggle_start_minimized,
+        )
+        if getattr(self.config_manager.app_config.ui, "start_minimized", True):
+            self.chk_start_minimized.select()
+        else:
+            self.chk_start_minimized.deselect()
+        self.chk_start_minimized.pack(anchor="e", pady=(3, 0))
+        ToolTip(self.chk_start_minimized, "Lancer Alfred directement réduit dans le systray au démarrage")
 
         # Boutons de sélection rapide de mode
         btn_box = ctk.CTkFrame(card, fg_color="transparent")
@@ -225,6 +244,13 @@ class DashboardView(ctk.CTkFrame):
         if self.on_minimize:
             self.on_minimize()
 
+    def _on_toggle_start_minimized(self) -> None:
+        """Met à jour l'option start_minimized depuis le tableau de bord et sauvegarde dans config.toml."""
+        if hasattr(self, "chk_start_minimized"):
+            is_checked = bool(self.chk_start_minimized.get())
+            self.config_manager.app_config.ui.start_minimized = is_checked
+            self.config_manager.save_app_config()
+
     def _update_boost_badge(self) -> None:
         """Met à jour l'apparence du bouton boost."""
         if not hasattr(self, "btn_boost_badge") or self.btn_boost_badge is None:
@@ -242,6 +268,11 @@ class DashboardView(ctk.CTkFrame):
         self._update_mode_badge()
         self._update_boost_badge()
         self.refresh_logs()
+        if hasattr(self, "chk_start_minimized"):
+            if getattr(self.config_manager.app_config.ui, "start_minimized", True):
+                self.chk_start_minimized.select()
+            else:
+                self.chk_start_minimized.deselect()
 
     def refresh_logs(self) -> None:
         """Recharge la liste visuelle des logs."""

@@ -133,7 +133,7 @@ class ConfigManager:
                 color_theme=ui_data.get("color_theme", "blue"),
                 font_size=int(ui_data.get("font_size", 13)),
                 always_on_top=bool(ui_data.get("always_on_top", True)),
-                start_minimized=bool(ui_data.get("start_minimized", False)),
+                start_minimized=bool(ui_data.get("start_minimized", True)),
             )
 
             self.app_config = AppConfig(general=general, modes=modes, mouse=mouse, ui=ui)

@@ -252,19 +252,22 @@ class SettingsModal(ctk.CTkToplevel):
             self.switch_always_top.deselect()
         self.switch_always_top.pack(anchor="w")
 
-        # Démarrer réduit dans la zone de notification
+        # Démarrer réduit dans la zone de notification (au lancement)
         row_min = ctk.CTkFrame(sec_ui, fg_color="transparent")
         row_min.pack(fill="x", padx=12, pady=(4, 10))
-        self.switch_start_minimized = ctk.CTkSwitch(
+        self.chk_start_minimized = ctk.CTkCheckBox(
             row_min,
-            text="Démarrer réduit dans la zone de notification",
-            font=self.theme_manager.get_font(size_offset=-1)
+            text="Démarrer minimisé au lancement (dans la zone de notification)",
+            font=self.theme_manager.get_font(size_offset=-1),
+            checkbox_width=20,
+            checkbox_height=20,
         )
-        if getattr(cfg.ui, "start_minimized", False):
-            self.switch_start_minimized.select()
+        if getattr(cfg.ui, "start_minimized", True):
+            self.chk_start_minimized.select()
         else:
-            self.switch_start_minimized.deselect()
-        self.switch_start_minimized.pack(anchor="w")
+            self.chk_start_minimized.deselect()
+        self.chk_start_minimized.pack(anchor="w")
+        self.switch_start_minimized = self.chk_start_minimized
 
         # --- Boutons d'Action Inférieurs ---
         btn_bar = ctk.CTkFrame(container, fg_color="transparent")
