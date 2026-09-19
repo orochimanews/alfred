@@ -127,6 +127,17 @@ def test_edge_snap_key_detection():
     assert grid.is_edge_snap_key("0 (pavé num.)") is True
     assert grid.is_edge_snap_key("a") is False
 
+    # Test avec la touche virgule ','
+    cfg_comma = GridConfig.from_dict({
+        "grid": {
+            "edge_snap_key": ",",
+        }
+    })
+    grid_comma = GridManager(config=cfg_comma)
+    assert grid_comma.is_edge_snap_key(",") is True
+    assert grid_comma.is_edge_snap_key("comma") is True
+    assert grid_comma.is_edge_snap_key("virgule") is True
+
 
 def test_edge_snap_config_steps_alias():
     cfg = GridConfig.from_dict({

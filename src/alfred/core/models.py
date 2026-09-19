@@ -258,10 +258,15 @@ class GridConfig:
         raw_edge_key = grid_data.get("edge_snap_key", grid_data.get("edge_key", grid_data.get("snap_key", "à")))
         if isinstance(raw_edge_key, list):
             edge_snap_key = ", ".join(str(k) for k in raw_edge_key)
-            key_candidates = [str(k).lower().strip() for k in raw_edge_key]
+            key_candidates = [str(k).lower().strip() for k in raw_edge_key if str(k).strip()]
         else:
             edge_snap_key = str(raw_edge_key).strip()
-            key_candidates = [k.lower().strip() for k in edge_snap_key.split(",") if k.strip()]
+            if edge_snap_key == ",":
+                key_candidates = [","]
+            else:
+                key_candidates = [k.lower().strip() for k in edge_snap_key.split(",") if k.strip()]
+                if not key_candidates and "," in edge_snap_key:
+                    key_candidates = [","]
 
         raw_offset = grid_data.get(
             "edge_offset",
@@ -279,6 +284,8 @@ class GridConfig:
             edge_snap_keys.add(cand)
             if cand in ("0", "num_0", "num 0", "à"):
                 edge_snap_keys.update(["0", "num_0", "num 0", "0 (pavé num.)", "0 (pave num.)", "à"])
+            elif cand in (",", "virgule", "comma"):
+                edge_snap_keys.update([",", "virgule", "comma"])
             elif cand.startswith("num_") or cand.startswith("num "):
                 digit = cand.replace("num_", "").replace("num ", "").strip()
                 edge_snap_keys.update([
@@ -316,10 +323,15 @@ class GridConfig:
         raw_subgrid_key = grid_data.get("subgrid_toggle_key", grid_data.get("subgrid_key", "²"))
         if isinstance(raw_subgrid_key, list):
             subgrid_toggle_key = ", ".join(str(k) for k in raw_subgrid_key)
-            subgrid_candidates = [str(k).lower().strip() for k in raw_subgrid_key]
+            subgrid_candidates = [str(k).lower().strip() for k in raw_subgrid_key if str(k).strip()]
         else:
             subgrid_toggle_key = str(raw_subgrid_key).strip()
-            subgrid_candidates = [k.lower().strip() for k in subgrid_toggle_key.split(",") if k.strip()]
+            if subgrid_toggle_key == ",":
+                subgrid_candidates = [","]
+            else:
+                subgrid_candidates = [k.lower().strip() for k in subgrid_toggle_key.split(",") if k.strip()]
+                if not subgrid_candidates and "," in subgrid_toggle_key:
+                    subgrid_candidates = [","]
 
         subgrid_columns = max(1, int(grid_data.get("subgrid_columns", 3)))
         subgrid_rows = max(1, int(grid_data.get("subgrid_rows", 3)))
@@ -330,6 +342,8 @@ class GridConfig:
             if not cand:
                 continue
             subgrid_toggle_keys.add(cand)
+            if cand in (",", "virgule", "comma"):
+                subgrid_toggle_keys.update([",", "virgule", "comma"])
 
         return cls(
             enabled=enabled,
