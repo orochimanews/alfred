@@ -29,6 +29,7 @@ class StateManager:
         self._current_mode: str = initial_mode
         self._previous_mode: str = initial_mode
         self._is_hook_enabled: bool = True
+        self._auto_switched_to_normal: bool = False
         self._observers: list[Callable[[str, Any], None]] = []
         self._logs: list[LogEntry] = []
         self._max_logs: int = 50
@@ -47,6 +48,17 @@ class StateManager:
     def is_hook_enabled(self) -> bool:
         with self._lock:
             return self._is_hook_enabled
+
+    @property
+    def is_auto_switched_to_normal(self) -> bool:
+        """Indique si le mode normal actuel résulte d'une détection automatique de champ texte."""
+        with self._lock:
+            return self._auto_switched_to_normal and self._current_mode == "normal"
+
+    def set_auto_switched_to_normal(self, value: bool) -> None:
+        """Définit si le mode normal a été déclenché par un champ texte (pour retour via Entrée)."""
+        with self._lock:
+            self._auto_switched_to_normal = bool(value)
 
     @property
     def logs(self) -> list[LogEntry]:
@@ -83,6 +95,8 @@ class StateManager:
                 return False
             self._previous_mode = self._current_mode
             self._current_mode = mode_clean
+            if mode_clean != "normal":
+                self._auto_switched_to_normal = False
 
         self._notify("mode_changed", mode_clean)
         return True

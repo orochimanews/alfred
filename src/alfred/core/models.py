@@ -707,6 +707,7 @@ class GeneralConfig:
     special_mode_name: str = "special"
     toggle_special_mode: bool = True
     auto_exit_on_text_input: bool = True
+    auto_return_on_enter: bool = True
 
 
 

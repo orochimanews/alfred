@@ -158,6 +158,7 @@ class TextInputFocusWatcher:
             logger.info("Champ texte détecté avec focus ('%s'). Bascule vers mode 'normal'.", name)
             switched = self.state_manager.set_mode("normal")
             if switched:
+                self.state_manager.set_auto_switched_to_normal(True)
                 self.state_manager.add_log(
                     action_name="Auto-retour Mode Normal (Champ texte)",
                     trigger_key="Focus",

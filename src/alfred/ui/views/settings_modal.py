@@ -124,6 +124,22 @@ class SettingsModal(ctk.CTkToplevel):
             self.chk_auto_exit_on_text.deselect()
         self.chk_auto_exit_on_text.pack(side="left")
 
+        # Retourner en mode spécial lors de l'envoi avec Entrée
+        row_auto_return = ctk.CTkFrame(sec_mode, fg_color="transparent")
+        row_auto_return.pack(fill="x", padx=12, pady=4)
+        self.chk_auto_return_on_enter = ctk.CTkCheckBox(
+            row_auto_return,
+            text="Retourner en mode spécial lors de l'envoi avec Entrée",
+            font=self.theme_manager.get_font(size_offset=-1),
+            checkbox_width=18,
+            checkbox_height=18,
+        )
+        if getattr(cfg.general, "auto_return_on_enter", True):
+            self.chk_auto_return_on_enter.select()
+        else:
+            self.chk_auto_return_on_enter.deselect()
+        self.chk_auto_return_on_enter.pack(side="left")
+
         # Raccourci de fermeture
         row_close = ctk.CTkFrame(sec_mode, fg_color="transparent")
         row_close.pack(fill="x", padx=12, pady=(4, 10))
@@ -347,6 +363,7 @@ class SettingsModal(ctk.CTkToplevel):
         cfg.general.special_mode_key = new_key
         cfg.general.start_in_special_mode = new_start_special
         cfg.general.auto_exit_on_text_input = new_auto_exit
+        cfg.general.auto_return_on_enter = bool(self.chk_auto_return_on_enter.get())
         cfg.general.default_mode = new_default_mode
         cfg.general.close = new_close
         for act in self.config_manager.actions:

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 import sys
+import time
 import threading
 import logging
 from typing import TYPE_CHECKING
@@ -173,6 +174,45 @@ class KeyboardHookService:
                 )
                 # Supprimer la touche pour éviter de taper le caractère spécial
                 return False
+
+            # 1b. Retour automatique au mode spécial lors de la validation avec la touche Entrée
+            if (
+                current_mode == "normal"
+                and getattr(gen_cfg, "auto_return_on_enter", True)
+                and self.state_manager.is_auto_switched_to_normal
+                and not is_repeat
+            ):
+                is_enter = (
+                    any(k in ("enter", "return", "entree") for k in candidate_keys)
+                    or getattr(event, "scan_code", None) in (28, 284)
+                )
+                if is_enter:
+                    # Si Shift est maintenu (ex: saut de ligne dans textarea/messagerie), ne pas basculer
+                    is_shift = any(k in self._pressed_keys for k in ("shift", "maj", "left shift", "right shift"))
+                    if not is_shift:
+                        logger.debug("Touche Entrée détectée après auto-switch champ texte. Programmation du retour en mode spécial.")
+                        self.state_manager.set_auto_switched_to_normal(False)
+                        target_mode = gen_cfg.special_mode_name
+
+                        def _return_to_special():
+                            time.sleep(0.06)
+                            if self.state_manager.current_mode == "normal":
+                                self.state_manager.set_mode(target_mode)
+                                self.state_manager.add_log(
+                                    action_name=f"Bascule vers mode '{target_mode}'",
+                                    trigger_key="Entrée",
+                                    mode="normal",
+                                    status="success",
+                                    details="Validation par Entrée (fin de saisie texte)",
+                                )
+
+                        threading.Thread(
+                            target=_return_to_special,
+                            daemon=True,
+                            name="Alfred-ReturnSpecialOnEnter",
+                        ).start()
+                        # Laisser passer la touche Entrée pour que l'application reçoive la validation/envoi
+                        return True
 
             # 2. Vérification du déplacement dynamique au clavier (Move) et Grille Pavé Numérique
             move_cfg = self.config_manager.move_config

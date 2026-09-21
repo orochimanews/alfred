@@ -144,3 +144,151 @@ def test_on_focus_changed_ignored_for_non_text_control():
 
     assert state_mgr.current_mode == "special"
     assert len(state_mgr.logs) == 0
+
+
+def test_auto_return_on_enter_config_default():
+    """Vérifie que auto_return_on_enter est activé par défaut."""
+    gen = GeneralConfig()
+    assert gen.auto_return_on_enter is True
+
+
+def test_state_manager_auto_switched_flag():
+    """Vérifie la gestion du drapeau is_auto_switched_to_normal dans StateManager."""
+    state_mgr = StateManager(initial_mode="special")
+    assert state_mgr.is_auto_switched_to_normal is False
+
+    # Quand on passe en normal manuellement, c'est False
+    state_mgr.set_mode("normal")
+    assert state_mgr.is_auto_switched_to_normal is False
+
+    # Activé explicitement suite à un focus champ texte
+    state_mgr.set_auto_switched_to_normal(True)
+    assert state_mgr.is_auto_switched_to_normal is True
+
+    # Si le mode change vers 'special', le drapeau retombe à False
+    state_mgr.set_mode("special")
+    assert state_mgr.is_auto_switched_to_normal is False
+
+
+def test_hook_returns_to_special_on_enter():
+    """Vérifie que la touche Entrée déclenche le retour au mode spécial sans bloquer la touche."""
+    import time
+    from src.alfred.core.hook import KeyboardHookService
+    import keyboard
+
+    state_mgr = StateManager(initial_mode="normal")
+    state_mgr.set_auto_switched_to_normal(True)
+
+    config_mgr = MagicMock()
+    config_mgr.app_config.general.auto_return_on_enter = True
+    config_mgr.app_config.general.special_mode_key = "!"
+    config_mgr.app_config.general.special_mode_name = "special"
+    config_mgr.move_config.enabled = False
+    config_mgr.grid_config.enabled = False
+    config_mgr.get_action_for_key.return_value = None
+
+    hook_service = KeyboardHookService(
+        state_manager=state_mgr,
+        config_manager=config_mgr,
+        commands_engine=MagicMock(),
+        grid_manager=MagicMock(),
+    )
+
+    event = keyboard.KeyboardEvent(
+        event_type=keyboard.KEY_DOWN,
+        scan_code=28,
+        name="enter",
+    )
+
+    # L'événement doit retourner True (la touche passe à l'application)
+    res = hook_service._on_key_event(event)
+    assert res is True
+
+    # Le drapeau est immédiatement consommé
+    assert state_mgr.is_auto_switched_to_normal is False
+
+    # Attendre la fin du délai du thread worker
+    time.sleep(0.1)
+    assert state_mgr.current_mode == "special"
+    logs = state_mgr.logs
+    assert len(logs) > 0
+    assert logs[0].trigger_key == "Entrée"
+    assert "Validation par Entrée" in logs[0].details
+
+
+def test_hook_does_not_return_to_special_on_shift_enter():
+    """Vérifie que Shift+Entrée (saut de ligne) ne déclenche pas le retour au mode spécial."""
+    from src.alfred.core.hook import KeyboardHookService
+    import keyboard
+
+    state_mgr = StateManager(initial_mode="normal")
+    state_mgr.set_auto_switched_to_normal(True)
+
+    config_mgr = MagicMock()
+    config_mgr.app_config.general.auto_return_on_enter = True
+    config_mgr.app_config.general.special_mode_key = "!"
+    config_mgr.app_config.general.special_mode_name = "special"
+    config_mgr.move_config.enabled = False
+    config_mgr.grid_config.enabled = False
+    config_mgr.get_action_for_key.return_value = None
+
+    hook_service = KeyboardHookService(
+        state_manager=state_mgr,
+        config_manager=config_mgr,
+        commands_engine=MagicMock(),
+        grid_manager=MagicMock(),
+    )
+
+    # Simuler Shift enfoncé
+    hook_service._pressed_keys.add("shift")
+
+    event = keyboard.KeyboardEvent(
+        event_type=keyboard.KEY_DOWN,
+        scan_code=28,
+        name="enter",
+    )
+
+    res = hook_service._on_key_event(event)
+    assert res is True
+    # Doit rester en normal
+    assert state_mgr.current_mode == "normal"
+    assert state_mgr.is_auto_switched_to_normal is True
+
+
+def test_hook_does_not_return_to_special_if_manual_normal():
+    """Vérifie que la touche Entrée ne repasse pas en spécial si le mode normal a été activé manuellement."""
+    import time
+    from src.alfred.core.hook import KeyboardHookService
+    import keyboard
+
+    state_mgr = StateManager(initial_mode="normal")
+    # Pas de flag auto_switched !
+    assert state_mgr.is_auto_switched_to_normal is False
+
+    config_mgr = MagicMock()
+    config_mgr.app_config.general.auto_return_on_enter = True
+    config_mgr.app_config.general.special_mode_key = "!"
+    config_mgr.app_config.general.special_mode_name = "special"
+    config_mgr.move_config.enabled = False
+    config_mgr.grid_config.enabled = False
+    config_mgr.get_action_for_key.return_value = None
+
+    hook_service = KeyboardHookService(
+        state_manager=state_mgr,
+        config_manager=config_mgr,
+        commands_engine=MagicMock(),
+        grid_manager=MagicMock(),
+    )
+
+    event = keyboard.KeyboardEvent(
+        event_type=keyboard.KEY_DOWN,
+        scan_code=28,
+        name="enter",
+    )
+
+    res = hook_service._on_key_event(event)
+    assert res is True
+    time.sleep(0.1)
+    # Reste en normal !
+    assert state_mgr.current_mode == "normal"
+
