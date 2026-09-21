@@ -126,8 +126,27 @@ class DashboardView(ctk.CTkFrame):
         self.btn_minimize.pack(anchor="e")
         ToolTip(self.btn_minimize, "Réduire dans la zone de notification (Systray)")
 
+        # Ligne d'options rapides sous le bouton Minimiser
+        chk_sub_box = ctk.CTkFrame(min_box, fg_color="transparent")
+        chk_sub_box.pack(anchor="e", pady=(3, 0))
+
+        self.chk_auto_return_on_enter = ctk.CTkCheckBox(
+            chk_sub_box,
+            text="Retour spécial sur Entrée",
+            font=self.theme_manager.get_font(size_offset=-2),
+            checkbox_width=16,
+            checkbox_height=16,
+            command=self._on_toggle_auto_return_on_enter,
+        )
+        if getattr(self.config_manager.app_config.general, "auto_return_on_enter", True):
+            self.chk_auto_return_on_enter.select()
+        else:
+            self.chk_auto_return_on_enter.deselect()
+        self.chk_auto_return_on_enter.pack(side="left", padx=(0, 10))
+        ToolTip(self.chk_auto_return_on_enter, "Repasser automatiquement en mode spécial après validation / envoi avec Entrée")
+
         self.chk_start_minimized = ctk.CTkCheckBox(
-            min_box,
+            chk_sub_box,
             text="Démarrer minimisé",
             font=self.theme_manager.get_font(size_offset=-2),
             checkbox_width=16,
@@ -138,7 +157,7 @@ class DashboardView(ctk.CTkFrame):
             self.chk_start_minimized.select()
         else:
             self.chk_start_minimized.deselect()
-        self.chk_start_minimized.pack(anchor="e", pady=(3, 0))
+        self.chk_start_minimized.pack(side="left")
         ToolTip(self.chk_start_minimized, "Lancer Alfred directement réduit dans le systray au démarrage")
 
         # Boutons de sélection rapide de mode
@@ -299,6 +318,13 @@ class DashboardView(ctk.CTkFrame):
             self.config_manager.app_config.general.default_mode = "special" if is_checked else "normal"
             self.config_manager.save_app_config()
 
+    def _on_toggle_auto_return_on_enter(self) -> None:
+        """Met à jour l'option auto_return_on_enter depuis le tableau de bord et sauvegarde dans config.toml."""
+        if hasattr(self, "chk_auto_return_on_enter"):
+            is_checked = bool(self.chk_auto_return_on_enter.get())
+            self.config_manager.app_config.general.auto_return_on_enter = is_checked
+            self.config_manager.save_app_config()
+
     def _update_boost_badge(self) -> None:
         """Met à jour l'apparence du bouton boost."""
         if not hasattr(self, "btn_boost_badge") or self.btn_boost_badge is None:
@@ -329,6 +355,11 @@ class DashboardView(ctk.CTkFrame):
         self._update_boost_badge()
         self._update_move_grid_badge()
         self.refresh_logs()
+        if hasattr(self, "chk_auto_return_on_enter"):
+            if getattr(self.config_manager.app_config.general, "auto_return_on_enter", True):
+                self.chk_auto_return_on_enter.select()
+            else:
+                self.chk_auto_return_on_enter.deselect()
         if hasattr(self, "chk_start_minimized"):
             if getattr(self.config_manager.app_config.ui, "start_minimized", True):
                 self.chk_start_minimized.select()
