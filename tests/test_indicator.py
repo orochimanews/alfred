@@ -98,3 +98,37 @@ def test_screen_indicator_app_integration():
         assert app.screen_indicator.enabled is True
     finally:
         app.close()
+
+
+def test_screen_indicator_pixel_offsets():
+    root = tk.Tk()
+    root.withdraw()
+    try:
+        indicator = ScreenIndicator(
+            master=root,
+            initial_mode="normal",
+            enabled=True,
+            size=20,
+            offset_x=10,
+            offset_y=15,
+        )
+        assert indicator.offset_x == 10
+        assert indicator.offset_y == 15
+        assert indicator.size == 20
+
+        # Vérifier le calcul des coordonnées
+        pos_x, pos_y = indicator._get_target_coordinates()
+        screen_w = root.winfo_screenwidth()
+        screen_h = root.winfo_screenheight()
+        assert 0 <= pos_x <= screen_w - 20
+        assert 0 <= pos_y <= screen_h - 20
+
+        # Mise à jour dynamique des offsets
+        indicator.update_config(offset_x=5, offset_y=8, size=24)
+        assert indicator.offset_x == 5
+        assert indicator.offset_y == 8
+        assert indicator.size == 24
+
+        indicator.destroy()
+    finally:
+        root.destroy()

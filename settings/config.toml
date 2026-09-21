@@ -5,7 +5,7 @@ start_in_special_mode = true
 auto_exit_on_text_input = true
 auto_return_on_enter = true
 close = "ctrl+w"
-quit = "ctrl+shift+q"
+quit = "²"
 special_mode_key = "!"
 
 [modes.normal]
@@ -35,3 +35,6 @@ font_size = 13
 always_on_top = false
 start_minimized = false
 show_screen_indicator = true
+screen_indicator_offset_x = 12
+screen_indicator_offset_y = 12
+screen_indicator_size = 20

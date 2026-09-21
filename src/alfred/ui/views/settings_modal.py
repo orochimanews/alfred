@@ -321,7 +321,7 @@ class SettingsModal(ctk.CTkToplevel):
 
         # Voyant discret de mode en bas à droite de l'écran
         row_ind = ctk.CTkFrame(sec_ui, fg_color="transparent")
-        row_ind.pack(fill="x", padx=12, pady=(4, 10))
+        row_ind.pack(fill="x", padx=12, pady=(4, 2))
         self.chk_screen_indicator = ctk.CTkCheckBox(
             row_ind,
             text="Afficher le voyant d'écran discret (en bas à droite)",
@@ -334,6 +334,38 @@ class SettingsModal(ctk.CTkToplevel):
         else:
             self.chk_screen_indicator.deselect()
         self.chk_screen_indicator.pack(anchor="w")
+
+        # Décalages X et Y en pixels depuis le bas à droite
+        row_offsets = ctk.CTkFrame(sec_ui, fg_color="transparent")
+        row_offsets.pack(fill="x", padx=(36, 12), pady=(2, 10))
+
+        ctk.CTkLabel(
+            row_offsets,
+            text="Position (px depuis bord droit) X :",
+            font=self.theme_manager.get_font(size_offset=-2),
+            text_color="gray",
+        ).pack(side="left")
+        self.entry_ind_offset_x = ctk.CTkEntry(
+            row_offsets,
+            width=50,
+            font=self.theme_manager.get_font(size_offset=-2),
+        )
+        self.entry_ind_offset_x.insert(0, str(getattr(cfg.ui, "screen_indicator_offset_x", 12)))
+        self.entry_ind_offset_x.pack(side="left", padx=(4, 16))
+
+        ctk.CTkLabel(
+            row_offsets,
+            text="Y (px depuis bas) :",
+            font=self.theme_manager.get_font(size_offset=-2),
+            text_color="gray",
+        ).pack(side="left")
+        self.entry_ind_offset_y = ctk.CTkEntry(
+            row_offsets,
+            width=50,
+            font=self.theme_manager.get_font(size_offset=-2),
+        )
+        self.entry_ind_offset_y.insert(0, str(getattr(cfg.ui, "screen_indicator_offset_y", 12)))
+        self.entry_ind_offset_y.pack(side="left", padx=(4, 0))
 
         # --- Boutons d'Action Inférieurs ---
         btn_bar = ctk.CTkFrame(container, fg_color="transparent")
@@ -403,6 +435,14 @@ class SettingsModal(ctk.CTkToplevel):
         new_always_top = bool(self.switch_always_top.get())
         new_start_minimized = bool(self.switch_start_minimized.get())
         new_show_indicator = bool(self.chk_screen_indicator.get())
+        try:
+            new_offset_x = max(0, int(self.entry_ind_offset_x.get()))
+        except (ValueError, TypeError):
+            new_offset_x = 12
+        try:
+            new_offset_y = max(0, int(self.entry_ind_offset_y.get()))
+        except (ValueError, TypeError):
+            new_offset_y = 12
 
         # Affectation
         cfg.general.special_mode_key = new_key
@@ -425,6 +465,8 @@ class SettingsModal(ctk.CTkToplevel):
         cfg.ui.always_on_top = new_always_top
         cfg.ui.start_minimized = new_start_minimized
         cfg.ui.show_screen_indicator = new_show_indicator
+        cfg.ui.screen_indicator_offset_x = new_offset_x
+        cfg.ui.screen_indicator_offset_y = new_offset_y
 
         # Sauvegarde sur le disque
         self.config_manager.save_app_config()

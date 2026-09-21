@@ -116,11 +116,15 @@ class AlfredApp(ctk.CTk):
         self.tray_service.start()
 
         # Voyant d'écran discret (en bas à droite)
-        show_indicator = getattr(self.config_manager.app_config.ui, "show_screen_indicator", True)
+        ui_cfg = self.config_manager.app_config.ui
+        show_indicator = getattr(ui_cfg, "show_screen_indicator", True)
         self.screen_indicator = ScreenIndicator(
             master=self,
             initial_mode=self.state_manager.current_mode,
             enabled=show_indicator,
+            offset_x=getattr(ui_cfg, "screen_indicator_offset_x", 12),
+            offset_y=getattr(ui_cfg, "screen_indicator_offset_y", 12),
+            size=getattr(ui_cfg, "screen_indicator_size", 20),
         )
 
         # Raccourci clavier dynamique de fermeture quand l'application a le focus
@@ -477,7 +481,13 @@ class AlfredApp(ctk.CTk):
         self._update_close_shortcut_binding()
 
         if hasattr(self, "screen_indicator") and self.screen_indicator:
-            show_ind = getattr(self.config_manager.app_config.ui, "show_screen_indicator", True)
+            ui_cfg = self.config_manager.app_config.ui
+            show_ind = getattr(ui_cfg, "show_screen_indicator", True)
+            self.screen_indicator.update_config(
+                offset_x=getattr(ui_cfg, "screen_indicator_offset_x", 12),
+                offset_y=getattr(ui_cfg, "screen_indicator_offset_y", 12),
+                size=getattr(ui_cfg, "screen_indicator_size", 20),
+            )
             self.screen_indicator.set_enabled(show_ind)
             self.screen_indicator.update_mode(self.state_manager.current_mode)
 

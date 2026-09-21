@@ -43,23 +43,23 @@ TRANSPARENT_COLOR_KEY = "#010101"
 
 
 class ScreenIndicator:
-    """Fenêtre overlay sans bordure affichant un voyant LED discret en bas à droite de l'écran, juste au-dessus de l'heure."""
+    """Fenêtre overlay sans bordure affichant un voyant LED discret à l'extrémité en bas à droite de l'écran."""
 
     def __init__(
         self,
         master: tk.Misc,
         initial_mode: str = "normal",
         enabled: bool = True,
-        size: int = 22,
-        margin_x: int = 45,
-        margin_y: int = 10,
+        size: int = 20,
+        offset_x: int = 12,
+        offset_y: int = 12,
     ) -> None:
         self.master = master
         self.current_mode = initial_mode
         self.enabled = enabled
         self.size = size
-        self.margin_x = margin_x
-        self.margin_y = margin_y
+        self.offset_x = offset_x
+        self.offset_y = offset_y
         self._window: tk.Toplevel | None = None
         self._canvas: tk.Canvas | None = None
 
@@ -67,12 +67,12 @@ class ScreenIndicator:
             self._create_window()
 
     def _get_target_coordinates(self) -> tuple[int, int]:
-        """Calcule les coordonnées (x, y) de la diode pour se placer juste au-dessus de l'horloge Windows."""
+        """Calcule les coordonnées (x, y) de la diode depuis l'extrémité en bas à droite de l'écran."""
         screen_w = self.master.winfo_screenwidth()
         screen_h = self.master.winfo_screenheight()
 
-        work_right = screen_w
-        work_bottom = screen_h - 48
+        base_x = screen_w
+        base_y = screen_h
 
         if sys.platform == "win32":
             try:
@@ -95,17 +95,18 @@ class ScreenIndicator:
                 mi = MONITORINFO()
                 mi.cbSize = ctypes.sizeof(MONITORINFO)
                 if user32.GetMonitorInfoW(hmon, ctypes.byref(mi)):
-                    # Compensation du facteur d'échelle DPI entre Win32 et Tkinter
+                    # Facteur d'échelle DPI entre Win32 et Tkinter
                     scale_x = mi.rcMonitor.right / screen_w if screen_w > 0 else 1.0
                     scale_y = mi.rcMonitor.bottom / screen_h if screen_h > 0 else 1.0
 
-                    work_right = int(mi.rcWork.right / scale_x)
-                    work_bottom = int(mi.rcWork.bottom / scale_y)
+                    base_x = int(mi.rcMonitor.right / scale_x)
+                    base_y = int(mi.rcMonitor.bottom / scale_y)
             except Exception as e:
                 logger.debug("Erreur lors de la récupération du moniteur Windows : %s", e)
 
-        pos_x = work_right - self.size - self.margin_x
-        pos_y = work_bottom - self.size - self.margin_y
+        # Calcul depuis l'extrémité inférieure droite de l'écran en pixels
+        pos_x = base_x - self.size - self.offset_x
+        pos_y = base_y - self.size - self.offset_y
 
         # Sécurité : s'assurer que la fenêtre est strictement dans l'écran visible
         pos_x = max(0, min(pos_x, screen_w - self.size))
@@ -114,11 +115,22 @@ class ScreenIndicator:
         return (pos_x, pos_y)
 
     def reposition(self) -> None:
-        """Recalcule et réapplique la position de la diode au-dessus de l'horloge."""
+        """Recalcule et réapplique la position et la taille de la diode."""
         if not self._window:
             return
         pos_x, pos_y = self._get_target_coordinates()
         self._window.geometry(f"{self.size}x{self.size}+{pos_x}+{pos_y}")
+        if self._canvas:
+            self._canvas.configure(width=self.size, height=self.size)
+            self._draw_indicator()
+
+    def update_config(self, offset_x: int, offset_y: int, size: int | None = None) -> None:
+        """Met à jour les paramètres de position et de taille en pixels."""
+        self.offset_x = offset_x
+        self.offset_y = offset_y
+        if size is not None and size > 0:
+            self.size = size
+        self.reposition()
 
     def _create_window(self) -> None:
         """Crée la fenêtre Toplevel sans bordure et transparente."""

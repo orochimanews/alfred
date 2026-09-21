@@ -163,6 +163,9 @@ class ConfigManager:
                 always_on_top=bool(ui_data.get("always_on_top", True)),
                 start_minimized=bool(ui_data.get("start_minimized", True)),
                 show_screen_indicator=bool(ui_data.get("show_screen_indicator", True)),
+                screen_indicator_offset_x=int(ui_data.get("screen_indicator_offset_x", 12)),
+                screen_indicator_offset_y=int(ui_data.get("screen_indicator_offset_y", 12)),
+                screen_indicator_size=int(ui_data.get("screen_indicator_size", 20)),
             )
 
             self.app_config = AppConfig(general=general, modes=modes, mouse=mouse, ui=ui)
@@ -208,6 +211,9 @@ class ConfigManager:
                     "always_on_top": self.app_config.ui.always_on_top,
                     "start_minimized": self.app_config.ui.start_minimized,
                     "show_screen_indicator": self.app_config.ui.show_screen_indicator,
+                    "screen_indicator_offset_x": self.app_config.ui.screen_indicator_offset_x,
+                    "screen_indicator_offset_y": self.app_config.ui.screen_indicator_offset_y,
+                    "screen_indicator_size": self.app_config.ui.screen_indicator_size,
                 },
             }
             with open(self.config_path, "wb") as f:

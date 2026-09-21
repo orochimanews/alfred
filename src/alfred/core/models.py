@@ -736,6 +736,9 @@ class UIConfig:
     always_on_top: bool = True
     start_minimized: bool = True
     show_screen_indicator: bool = True
+    screen_indicator_offset_x: int = 12
+    screen_indicator_offset_y: int = 12
+    screen_indicator_size: int = 20
 
 
 @dataclass

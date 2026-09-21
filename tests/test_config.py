@@ -47,6 +47,8 @@ def test_config_save_and_reload(tmp_path: Path):
     mgr.app_config.ui.theme = "light"
     mgr.app_config.ui.start_minimized = True
     mgr.app_config.ui.show_screen_indicator = False
+    mgr.app_config.ui.screen_indicator_offset_x = 15
+    mgr.app_config.ui.screen_indicator_offset_y = 25
 
     assert mgr.save_app_config() is True
 
@@ -63,6 +65,8 @@ def test_config_save_and_reload(tmp_path: Path):
     assert loaded.ui.theme == "light"
     assert loaded.ui.start_minimized is True
     assert loaded.ui.show_screen_indicator is False
+    assert loaded.ui.screen_indicator_offset_x == 15
+    assert loaded.ui.screen_indicator_offset_y == 25
 
 
 def test_config_manager_load_multi_actions_file(tmp_path: Path):
