@@ -2,6 +2,7 @@
 app_name = "Alfred"
 default_mode = "special"
 start_in_special_mode = true
+auto_exit_on_text_input = true
 close = "ctrl+w"
 
 [modes.normal]

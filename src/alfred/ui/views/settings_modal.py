@@ -108,6 +108,22 @@ class SettingsModal(ctk.CTkToplevel):
             self.chk_start_in_special_mode.deselect()
         self.chk_start_in_special_mode.pack(side="left")
 
+        # Sortir automatiquement du mode spécial sur champ texte
+        row_auto_exit = ctk.CTkFrame(sec_mode, fg_color="transparent")
+        row_auto_exit.pack(fill="x", padx=12, pady=4)
+        self.chk_auto_exit_on_text = ctk.CTkCheckBox(
+            row_auto_exit,
+            text="Quitter le mode spécial sur sélection d'un champ texte",
+            font=self.theme_manager.get_font(size_offset=-1),
+            checkbox_width=18,
+            checkbox_height=18,
+        )
+        if getattr(cfg.general, "auto_exit_on_text_input", True):
+            self.chk_auto_exit_on_text.select()
+        else:
+            self.chk_auto_exit_on_text.deselect()
+        self.chk_auto_exit_on_text.pack(side="left")
+
         # Raccourci de fermeture
         row_close = ctk.CTkFrame(sec_mode, fg_color="transparent")
         row_close.pack(fill="x", padx=12, pady=(4, 10))
@@ -315,6 +331,7 @@ class SettingsModal(ctk.CTkToplevel):
         # Récupération des valeurs
         new_key = self.entry_special_key.get().strip() or "!"
         new_start_special = bool(self.chk_start_in_special_mode.get())
+        new_auto_exit = bool(self.chk_auto_exit_on_text.get())
         new_default_mode = "special" if new_start_special else "normal"
         new_close = self.entry_close_shortcut.get().strip()
         new_use_sys_speed = bool(self.switch_use_sys_speed.get())
@@ -329,6 +346,7 @@ class SettingsModal(ctk.CTkToplevel):
         # Affectation
         cfg.general.special_mode_key = new_key
         cfg.general.start_in_special_mode = new_start_special
+        cfg.general.auto_exit_on_text_input = new_auto_exit
         cfg.general.default_mode = new_default_mode
         cfg.general.close = new_close
         for act in self.config_manager.actions:

@@ -131,6 +131,7 @@ from src.alfred.core.move import MoveManager
 from src.alfred.core.commands_engine import CommandsEngine
 from src.alfred.core.hook import KeyboardHookService
 from src.alfred.core.mouse import mouse
+from src.alfred.core.text_focus import TextInputFocusWatcher
 
 
 def main() -> None:
@@ -174,9 +175,14 @@ def main() -> None:
         grid_manager=grid_mgr,
         move_manager=move_mgr,
     )
+    text_focus_watcher = TextInputFocusWatcher(
+        state_manager=state_mgr,
+        config_manager=config_mgr,
+    )
 
-    # 4. Démarrage du hook clavier
+    # 4. Démarrage des services d'arrière-plan
     hook_service.start()
+    text_focus_watcher.start()
 
     if args.headless:
         logger.info("Mode Headless activé. Appuyez sur Ctrl+C pour quitter.")
@@ -186,6 +192,7 @@ def main() -> None:
         except KeyboardInterrupt:
             logger.info("Arrêt du mode headless...")
         finally:
+            text_focus_watcher.stop()
             hook_service.stop()
             move_mgr.stop()
             mouse.restore_initial_speed()
@@ -210,6 +217,7 @@ def main() -> None:
     except Exception as err:
         logger.error("Erreur d'exécution de l'application : %s", err, exc_info=True)
     finally:
+        text_focus_watcher.stop()
         hook_service.stop()
         move_mgr.stop()
         mouse.restore_initial_speed()

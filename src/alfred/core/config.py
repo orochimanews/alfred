@@ -102,6 +102,7 @@ class ConfigManager:
                 special_mode_key=gen_data.get("special_mode_key", ""),
                 special_mode_name=gen_data.get("special_mode_name", "special"),
                 toggle_special_mode=bool(gen_data.get("toggle_special_mode", True)),
+                auto_exit_on_text_input=bool(gen_data.get("auto_exit_on_text_input", True)),
             )
 
             modes_data = data.get("modes", {})
@@ -163,6 +164,7 @@ class ConfigManager:
                 "app_name": self.app_config.general.app_name,
                 "default_mode": self.app_config.general.default_mode,
                 "start_in_special_mode": self.app_config.general.start_in_special_mode,
+                "auto_exit_on_text_input": self.app_config.general.auto_exit_on_text_input,
                 "close": self.app_config.general.close,
             }
             if self.app_config.general.special_mode_key:
