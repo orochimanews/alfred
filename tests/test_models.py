@@ -128,6 +128,23 @@ def test_action_multi_key_triggers():
     assert "x" in act2.triggers
     assert "y" in act2.triggers
 
+    # Touche seule virgule
+    act_comma = Action.from_dict({
+        "name": "Virgule Action",
+        "trigger": ",",
+        "commands": []
+    })
+    assert "," in act_comma.triggers
+
+    # Liste contenant une virgule et une autre touche
+    act_comma_list = Action.from_dict({
+        "name": "Virgule et K",
+        "trigger": [",", "k"],
+        "commands": []
+    })
+    assert "," in act_comma_list.triggers
+    assert "k" in act_comma_list.triggers
+
 
 def test_move_config_multi_key_directions():
     """Vérifie le support de plusieurs touches pour une même direction de déplacement."""
