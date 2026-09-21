@@ -120,10 +120,13 @@ class CommandsEngine:
                 self.grid_manager.jump_to_subcell(col, row)
             case "subgrid":
                 self._cmd_subgrid(params)
-            case "edge_snap" | "grid_edge_snap":
+            case "edge_snap" | "grid_edge_snap" | "move_edge_snap":
                 raw_off = params.get("offset", params.get("steps", params.get("distance", None)))
                 offset = int(raw_off) if raw_off is not None else None
-                self.grid_manager.snap_to_edge(offset=offset)
+                if self.move_manager and self.move_manager.config.edge_snap_enabled:
+                    self.move_manager.snap_to_edge(offset=offset)
+                elif self.grid_manager:
+                    self.grid_manager.snap_to_edge(offset=offset)
             case "scroll" | "wheel":
                 self._cmd_scroll(params)
             case "mouse_down":

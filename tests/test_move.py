@@ -436,3 +436,98 @@ def test_move_grid_engine_commands():
     finally:
         move_mgr.stop()
 
+
+def test_move_edge_snap_config():
+    """Vérifie la configuration et détection de touches pour edge snap dans MoveConfig."""
+    data = {
+        "move": {
+            "edge_snap_enabled": True,
+            "edge_snap_key": "e",
+            "edge_offset": 40,
+        }
+    }
+    cfg = MoveConfig.from_dict(data)
+    assert cfg.edge_snap_enabled is True
+    assert cfg.edge_snap_key == "e"
+    assert cfg.edge_offset == 40
+    assert "e" in cfg.edge_snap_keys
+
+    # Test avec alias 'steps'
+    data_steps = {
+        "move": {
+            "steps": 25,
+            "edge_snap_key": "0",
+        }
+    }
+    cfg_steps = MoveConfig.from_dict(data_steps)
+    assert cfg_steps.edge_offset == 25
+    assert "0" in cfg_steps.edge_snap_keys
+    assert "num_0" in cfg_steps.edge_snap_keys
+
+
+def test_move_edge_snap_calculations():
+    """Vérifie le calcul géométrique de rapprochement du bord dans MoveManager."""
+    cfg = MoveConfig(edge_snap_enabled=True, edge_offset=40)
+    mock_mouse = MagicMock()
+    mgr = MoveManager(config=cfg, mouse_controller=mock_mouse)
+    w, h = 1920, 1080
+
+    try:
+        # Coin haut-gauche : x=320, y=180 -> plaque à (40, 40)
+        assert mgr.calculate_edge_snap(320, 180, w, h) == (40, 40)
+
+        # Haut-milieu : x=960, y=180 -> x inchangé (960), y=40
+        assert mgr.calculate_edge_snap(960, 180, w, h) == (960, 40)
+
+        # Coin haut-droite : x=1600, y=180 -> x=1879 (1920 - 1 - 40), y=40
+        assert mgr.calculate_edge_snap(1600, 180, w, h) == (1879, 40)
+
+        # Centre-gauche : x=320, y=540 -> x=40, y inchangé (540)
+        assert mgr.calculate_edge_snap(320, 540, w, h) == (40, 540)
+
+        # Centre exact : x=960, y=540 -> aucun bord -> None
+        assert mgr.calculate_edge_snap(960, 540, w, h) is None
+
+        # Coin bas-droite : x=1600, y=900 -> x=1879, y=1039 (1080 - 1 - 40)
+        assert mgr.calculate_edge_snap(1600, 900, w, h) == (1879, 1039)
+
+        # Test avec offset spécifique fourni en argument
+        assert mgr.calculate_edge_snap(320, 180, w, h, offset=15) == (15, 15)
+    finally:
+        mgr.stop()
+
+
+def test_move_edge_snap_execution_and_command():
+    """Vérifie l'exécution de snap_to_edge et la commande via CommandsEngine."""
+    cfg = MoveConfig(edge_snap_enabled=True, edge_snap_key="e", edge_offset=40)
+    mock_mouse = MagicMock()
+    mock_mouse.get_screen_size.return_value = (1920, 1080)
+    mock_mouse.get_position.return_value = (320, 180)  # Coin haut-gauche
+
+    state_mgr = StateManager()
+    config_mgr = ConfigManager()
+    grid_mgr = MagicMock()
+    move_mgr = MoveManager(config=cfg, mouse_controller=mock_mouse, state_manager=state_mgr)
+
+    engine = CommandsEngine(
+        state_manager=state_mgr,
+        grid_manager=grid_mgr,
+        config_manager=config_mgr,
+        move_manager=move_mgr,
+    )
+    try:
+        assert move_mgr.is_edge_snap_key("e") is True
+        assert move_mgr.is_edge_snap_key("x") is False
+
+        # Exécution directe
+        coords = move_mgr.snap_to_edge()
+        assert coords == (40, 40)
+        mock_mouse.set_position.assert_called_with(40, 40)
+
+        # Exécution via CommandsEngine
+        mock_mouse.get_position.return_value = (1600, 900)  # Coin bas-droite
+        engine.execute_command(Command(type="edge_snap", params={"offset": 20}))
+        mock_mouse.set_position.assert_called_with(1899, 1059)
+    finally:
+        move_mgr.stop()
+

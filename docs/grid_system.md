@@ -42,12 +42,12 @@ c = [2, 2] # Bas-droite
 
 ## 3. Rapprochement vers les Bords (Edge Snap)
 
-Une fonction paramétrable permet de rapprocher instantanément la souris très près du bord de l'écran en fonction de la cellule où se trouve actuellement le curseur :
+Une fonction paramétrable (configurée dans `settings/move.toml`) permet de rapprocher instantanément la souris très près du bord de l'écran en fonction de la zone où se trouve actuellement le curseur :
 
-- **Paramètres** :
+- **Paramètres (`settings/move.toml`)** :
   - `edge_snap_enabled` : Active ou désactive la fonction (défaut : `true`).
-  - `edge_snap_key` : Touche de déclenchement (défaut : `"à"`, gère automatiquement `"à"`, `"0"` et `"num_0"`).
-  - `edge_offset` (ou `steps`) : Distance en pixels par rapport au bord de l'écran (défaut : `10`).
+  - `edge_snap_key` : Touche de déclenchement (ex: `"e"`, gère automatiquement alias et pavé numérique).
+  - `edge_offset` (ou `steps`) : Distance en pixels par rapport au bord de l'écran (défaut : `40`).
 
 - **Comportement géométrique** :
   - Si le curseur est dans une case touchant un coin (ex: `(0, 0)`), la souris saute à $(offset, offset)$ très près du coin haut-gauche.

@@ -104,8 +104,8 @@ def test_edge_snap_calculations():
 
 
 def test_edge_snap_key_detection():
-    # Test avec la touche 'à' par défaut
-    cfg_default = GridConfig.from_dict({"grid": {}})
+    # Test avec la touche 'à' par défaut quand activé
+    cfg_default = GridConfig.from_dict({"grid": {"edge_snap_enabled": True}})
     assert cfg_default.edge_snap_key == "à"
     grid_default = GridManager(config=cfg_default)
     assert grid_default.is_edge_snap_key("à") is True
@@ -114,6 +114,7 @@ def test_edge_snap_key_detection():
 
     cfg = GridConfig.from_dict({
         "grid": {
+            "edge_snap_enabled": True,
             "edge_snap_key": "0",
             "edge_offset": 15,
         }
@@ -130,6 +131,7 @@ def test_edge_snap_key_detection():
     # Test avec la touche virgule ','
     cfg_comma = GridConfig.from_dict({
         "grid": {
+            "edge_snap_enabled": True,
             "edge_snap_key": ",",
         }
     })

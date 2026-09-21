@@ -41,9 +41,10 @@ class GridView(ctk.CTkFrame):
         bar.grid(row=0, column=0, sticky="ew", padx=10, pady=(8, 4))
         bar.grid_columnconfigure(0, weight=1)
 
+        snap_info = f"  |  Bord : [{cfg.edge_snap_key}] ({cfg.edge_offset} px)" if cfg.edge_snap_enabled else ""
         lbl_info = ctk.CTkLabel(
             bar,
-            text=f"Résolution : {w}x{h} px  |  Grille : {cfg.columns}x{cfg.rows}  |  Sous-grille : [{cfg.subgrid_toggle_key}]  |  Bord : [{cfg.edge_snap_key}] ({cfg.edge_offset} px)",
+            text=f"Résolution : {w}x{h} px  |  Grille : {cfg.columns}x{cfg.rows}  |  Sous-grille : [{cfg.subgrid_toggle_key}]{snap_info}",
             font=self.theme_manager.get_font(size_offset=-1, weight="bold")
         )
         lbl_info.grid(row=0, column=0, sticky="w")
@@ -51,15 +52,16 @@ class GridView(ctk.CTkFrame):
         right_panel = ctk.CTkFrame(bar, fg_color="transparent")
         right_panel.grid(row=0, column=1, sticky="e")
 
-        btn_snap_edge = ctk.CTkButton(
-            right_panel,
-            text=f"Bord [{cfg.edge_snap_key}]",
-            font=self.theme_manager.get_font(size_offset=-2),
-            height=26,
-            width=80,
-            command=lambda: threading.Thread(target=self.grid_manager.snap_to_edge, daemon=True).start()
-        )
-        btn_snap_edge.pack(side="right", padx=(6, 0))
+        if cfg.edge_snap_enabled:
+            btn_snap_edge = ctk.CTkButton(
+                right_panel,
+                text=f"Bord [{cfg.edge_snap_key}]",
+                font=self.theme_manager.get_font(size_offset=-2),
+                height=26,
+                width=80,
+                command=lambda: threading.Thread(target=self.grid_manager.snap_to_edge, daemon=True).start()
+            )
+            btn_snap_edge.pack(side="right", padx=(6, 0))
 
         btn_toggle_sub = ctk.CTkButton(
             right_panel,

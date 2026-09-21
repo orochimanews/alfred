@@ -200,6 +200,76 @@ class MoveManager:
             return self.jump_grid_cell(col, row, trigger_key=key_name)
         return None
 
+    def is_edge_snap_key(self, key_name: str) -> bool:
+        """Indique si la touche déclenche le rapprochement vers le bord de l'écran."""
+        if not self.config.enabled or not self.config.edge_snap_enabled:
+            return False
+        return key_name.lower().strip() in self.config.edge_snap_keys
+
+    def calculate_edge_snap(
+        self,
+        x: int,
+        y: int,
+        screen_width: int | None = None,
+        screen_height: int | None = None,
+        offset: int | None = None,
+    ) -> tuple[int, int] | None:
+        """Calcule les nouvelles coordonnées (x, y) plaquées vers le ou les bords de l'écran.
+
+        Retourne None si la position actuelle du curseur ne touche aucun bord (zone centrale).
+        """
+        if screen_width is None or screen_height is None:
+            screen_width, screen_height = self.mouse.get_screen_size()
+
+        cols, rows = 3, 3
+        cell_w = screen_width / cols
+        cell_h = screen_height / rows
+
+        col = max(0, min(cols - 1, int(x / cell_w)))
+        row = max(0, min(rows - 1, int(y / cell_h)))
+
+        d = max(0, self.config.edge_offset if offset is None else offset)
+        new_x = x
+        new_y = y
+        snapped = False
+
+        # Axe horizontal (gauche / droite)
+        if col == 0:
+            new_x = min(screen_width - 1, d)
+            snapped = True
+        elif col == cols - 1:
+            new_x = max(0, screen_width - 1 - d)
+            snapped = True
+
+        # Axe vertical (haut / bas)
+        if row == 0:
+            new_y = min(screen_height - 1, d)
+            snapped = True
+        elif row == rows - 1:
+            new_y = max(0, screen_height - 1 - d)
+            snapped = True
+
+        if not snapped:
+            return None
+
+        return (new_x, new_y)
+
+    def snap_to_edge(self, offset: int | None = None) -> tuple[int, int] | None:
+        """Déplace la souris très proche du bord selon la zone actuelle du curseur."""
+        cur_x, cur_y = self.mouse.get_position()
+        coords = self.calculate_edge_snap(cur_x, cur_y, offset=offset)
+        if coords is not None:
+            nx, ny = coords
+            self.mouse.set_position(nx, ny)
+            effective_offset = self.config.edge_offset if offset is None else offset
+            logger.info(
+                "Déplacement Move : Rapprochement bord depuis (%d, %d) vers (%d, %d) [offset=%d px]",
+                cur_x, cur_y, nx, ny, effective_offset
+            )
+            return (nx, ny)
+        logger.debug("Déplacement Move : Curseur à (%d, %d) hors des zones de bord, aucun saut.", cur_x, cur_y)
+        return None
+
     def is_boost_key(self, key_name: str) -> bool:
         """Vérifie si une touche correspond au raccourci de bascule boost."""
         if not self.config.boost_enabled:

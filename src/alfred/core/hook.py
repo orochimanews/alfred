@@ -201,7 +201,18 @@ class KeyboardHookService:
                             self.move_manager.toggle_boost()
                         return False
 
-                    # 2d. Touche de déplacement continu
+                    # 2d. Touche de rapprochement du bord (Edge Snap)
+                    if self.move_manager.is_edge_snap_key(cand):
+                        if not is_repeat:
+                            logger.debug("Touche de rapprochement bord (move) détectée : '%s'", cand)
+                            threading.Thread(
+                                target=self._execute_move_edge_snap,
+                                args=(cand, current_mode),
+                                daemon=True
+                            ).start()
+                        return False
+
+                    # 2e. Touche de déplacement continu
                     if not self.move_manager.is_grid_active and self.move_manager.is_move_key(cand):
                         self.move_manager.press_key(cand)
                         return False
@@ -310,6 +321,28 @@ class KeyboardHookService:
                 )
         except Exception as err:
             logger.error("Erreur lors du saut de sous-grille pour la touche '%s': %s", key_name, err, exc_info=True)
+
+    def _execute_move_edge_snap(self, key_name: str, current_mode: str) -> None:
+        """Exécute le rapprochement vers le bord de l'écran en arrière-plan (Move)."""
+        try:
+            coords = self.move_manager.snap_to_edge() if self.move_manager else None
+            if coords:
+                nx, ny = coords
+                self.state_manager.add_log(
+                    action_name=f"Bord Curseur ({nx}, {ny})",
+                    trigger_key=key_name,
+                    mode=current_mode,
+                    status="success",
+                )
+            else:
+                self.state_manager.add_log(
+                    action_name="Bord Curseur (hors bord)",
+                    trigger_key=key_name,
+                    mode=current_mode,
+                    status="ignored",
+                )
+        except Exception as err:
+            logger.error("Erreur lors du rapprochement vers le bord (move) pour la touche '%s': %s", key_name, err)
 
     def _execute_grid_edge_snap(self, key_name: str, current_mode: str) -> None:
         """Exécute le rapprochement vers le bord de l'écran en arrière-plan."""

@@ -226,7 +226,7 @@ class GridConfig:
     active_modes: list[str] = field(default_factory=lambda: ["grid", "special"])
     exit_mode_after_jump: bool = False
     auto_click: bool = False
-    edge_snap_enabled: bool = True
+    edge_snap_enabled: bool = False
     edge_snap_key: str = "à"
     edge_offset: int = 10
     cells: dict[str, tuple[int, int]] = field(default_factory=dict)
@@ -262,8 +262,8 @@ class GridConfig:
         exit_mode = bool(grid_data.get("exit_mode_after_jump", False))
         auto_click = bool(grid_data.get("auto_click", False))
 
-        # Paramètres de rapprochement vers les bords (Edge Snap)
-        edge_snap_enabled = bool(grid_data.get("edge_snap_enabled", True))
+        # Paramètres de rapprochement vers les bords (Edge Snap - rétrocompatibilité, déplacé dans MoveConfig)
+        edge_snap_enabled = bool(grid_data.get("edge_snap_enabled", False))
         raw_edge_key = grid_data.get("edge_snap_key", grid_data.get("edge_key", grid_data.get("snap_key", "à")))
         if isinstance(raw_edge_key, list):
             edge_snap_key = ", ".join(str(k) for k in raw_edge_key)
@@ -457,6 +457,12 @@ class MoveConfig:
     grid_cells: dict[str, tuple[int, int]] = field(default_factory=dict)
     keys_grid_toggle: set[str] = field(default_factory=set)
 
+    # Rapprochement vers les bords de l'écran (Edge Snap)
+    edge_snap_enabled: bool = True
+    edge_snap_key: str = "e"
+    edge_offset: int = 40
+    edge_snap_keys: set[str] = field(default_factory=set)
+
     # Alias résolus pour test rapide
     keys_up: set[str] = field(default_factory=set)
     keys_down: set[str] = field(default_factory=set)
@@ -468,6 +474,42 @@ class MoveConfig:
     keys_down_right: set[str] = field(default_factory=set)
     keys_boost: set[str] = field(default_factory=set)
     all_move_keys: set[str] = field(default_factory=set)
+
+    def __post_init__(self) -> None:
+        """Initialise automatiquement les alias de touches s'ils ne sont pas fournis."""
+        if not self.edge_snap_keys and self.edge_snap_key:
+            self.edge_snap_keys = generate_key_aliases(self.edge_snap_key)
+        if not self.keys_grid_toggle and self.grid_toggle_key:
+            self.keys_grid_toggle = generate_key_aliases(self.grid_toggle_key)
+        if not self.keys_up and self.key_up:
+            self.keys_up = generate_key_aliases(self.key_up)
+        if not self.keys_down and self.key_down:
+            self.keys_down = generate_key_aliases(self.key_down)
+        if not self.keys_left and self.key_left:
+            self.keys_left = generate_key_aliases(self.key_left)
+        if not self.keys_right and self.key_right:
+            self.keys_right = generate_key_aliases(self.key_right)
+        if not self.keys_up_left and self.key_up_left:
+            self.keys_up_left = generate_key_aliases(self.key_up_left)
+        if not self.keys_up_right and self.key_up_right:
+            self.keys_up_right = generate_key_aliases(self.key_up_right)
+        if not self.keys_down_left and self.key_down_left:
+            self.keys_down_left = generate_key_aliases(self.key_down_left)
+        if not self.keys_down_right and self.key_down_right:
+            self.keys_down_right = generate_key_aliases(self.key_down_right)
+        if not self.keys_boost and self.boost_toggle_key:
+            self.keys_boost = generate_key_aliases(self.boost_toggle_key)
+        if not self.all_move_keys:
+            self.all_move_keys = (
+                self.keys_up
+                | self.keys_down
+                | self.keys_left
+                | self.keys_right
+                | self.keys_up_left
+                | self.keys_up_right
+                | self.keys_down_left
+                | self.keys_down_right
+            )
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> MoveConfig:
@@ -533,6 +575,32 @@ class MoveConfig:
         keys_down_right = generate_key_aliases(key_down_right)
         keys_boost = generate_key_aliases(boost_toggle_key)
 
+        # Rapprochement vers les bords de l'écran (Edge Snap)
+        edge_snap_enabled = bool(move_data.get("edge_snap_enabled", True))
+        raw_edge_key = move_data.get("edge_snap_key", move_data.get("edge_key", move_data.get("snap_key", "e")))
+        if isinstance(raw_edge_key, list):
+            edge_snap_key = ", ".join(str(k) for k in raw_edge_key)
+            edge_snap_candidates = [str(k).lower().strip() for k in raw_edge_key if str(k).strip()]
+        else:
+            edge_snap_key = str(raw_edge_key).strip()
+            if edge_snap_key == ",":
+                edge_snap_candidates = [","]
+            else:
+                edge_snap_candidates = [k.lower().strip() for k in edge_snap_key.split(",") if k.strip()]
+                if not edge_snap_candidates and "," in edge_snap_key:
+                    edge_snap_candidates = [","]
+
+        raw_offset = move_data.get(
+            "edge_offset",
+            move_data.get("steps", move_data.get("edge_distance", move_data.get("offset", 40)))
+        )
+        try:
+            edge_offset = max(0, int(raw_offset))
+        except (ValueError, TypeError):
+            edge_offset = 40
+
+        edge_snap_keys = generate_key_aliases(edge_snap_candidates)
+
         all_move_keys = (
             keys_up
             | keys_down
@@ -570,6 +638,10 @@ class MoveConfig:
             grid_exit_after_jump=grid_exit_after_jump,
             grid_cells=grid_cells,
             keys_grid_toggle=keys_grid_toggle,
+            edge_snap_enabled=edge_snap_enabled,
+            edge_snap_key=edge_snap_key,
+            edge_offset=edge_offset,
+            edge_snap_keys=edge_snap_keys,
             keys_up=keys_up,
             keys_down=keys_down,
             keys_left=keys_left,

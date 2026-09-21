@@ -21,7 +21,7 @@ active_modes = ["special"]
 # Les alias du pavé numérique sont automatiquement détectés.
 
 key_up = "8"              # Déplacement vers le haut (ex: Pavé numérique 8)
-key_down = "2"            # Déplacement vers le bas (ex: Pavé numérique 5)
+key_down = "5"            # Déplacement vers le bas (ex: Pavé numérique 5)
 key_left = "4"            # Déplacement vers la gauche (ex: Pavé numérique 4)
 key_right = "6"           # Déplacement vers la droite (ex: Pavé numérique 6)
 
@@ -65,6 +65,15 @@ boost_multiplier = 4.0    # Multiplicateur appliqué à la vitesse quand le boos
 start_boosted = false     # État initial au démarrage de l'application
 
 # ------------------------------------------------------------------------------
+# Action Rapprochement vers les bords de l'écran (Edge Snap)
+# ------------------------------------------------------------------------------
+# Si le curseur se trouve dans une zone touchant un ou deux bords (coins ou côtés),
+# presser cette touche plaque instantanément le curseur très proche du bord correspondant.
+edge_snap_enabled = true
+edge_snap_key = "e"                # Touche de rapprochement (ex: "e", "à", "0", "num_0")
+edge_offset = 40                   # Distance en pixels par rapport au bord (alias 'steps = 40')
+
+# ------------------------------------------------------------------------------
 # Grille 3x3 sur Pavé Numérique (Move Grid Navigation)
 # ------------------------------------------------------------------------------
 # Permet de basculer le comportement du pavé numérique :
@@ -73,8 +82,8 @@ start_boosted = false     # État initial au démarrage de l'application
 #   au centre de l'une des 9 cases réparties sur l'écran.
 # Un nouvel appui sur grid_toggle_key désactive la grille et restaure le déplacement.
 grid_enabled = true
-grid_toggle_key = "decimal"    # Touche toggle (ex: "decimal", ".", ",", "num_0", "0")
-grid_exit_after_jump = false   # Si true, désactive la grille après un premier saut
+grid_toggle_key = "q"    # Touche toggle (ex: "decimal", ".", ",", "num_0", "0")
+grid_exit_after_jump = true   # Si true, désactive la grille après un premier saut
 
 # Mappage des touches de la grille (9 cases) vers les coordonnées [colonne, ligne] :
 #  Ligne 0 (haut)   : 7 = [0, 0] (haut-gauche),   8 = [1, 0] (haut-centre),    9 = [2, 0] (haut-droite)
