@@ -176,6 +176,12 @@ class AlfredApp(ctk.CTk):
         """Réduit la fenêtre dans la zone de notification Windows (systray)."""
         logger.info("Réduction d'Alfred dans la zone de notification...")
         self.withdraw()
+        if hasattr(self, "screen_indicator") and self.screen_indicator and self.screen_indicator.enabled:
+            self.screen_indicator.reposition()
+            if self.screen_indicator._window:
+                self.screen_indicator._window.deiconify()
+                self.screen_indicator._window.attributes("-topmost", True)
+                self.screen_indicator._window.lift()
 
     def restore_from_tray(self) -> None:
         """Restaure et affiche la fenêtre Alfred au premier plan."""
@@ -185,6 +191,11 @@ class AlfredApp(ctk.CTk):
         self.focus_force()
         if self.config_manager.app_config.ui.always_on_top:
             self.attributes("-topmost", True)
+        if hasattr(self, "screen_indicator") and self.screen_indicator and self.screen_indicator.enabled:
+            self.screen_indicator.reposition()
+            if self.screen_indicator._window:
+                self.screen_indicator._window.attributes("-topmost", True)
+                self.screen_indicator._window.lift()
 
     def close(self, event: any = None) -> None:
         """Ferme proprement l'application Alfred (arrêt du tray, arrêt du hook, restauration souris, destruction)."""

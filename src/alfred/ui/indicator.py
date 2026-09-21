@@ -43,16 +43,16 @@ TRANSPARENT_COLOR_KEY = "#010101"
 
 
 class ScreenIndicator:
-    """Fenêtre overlay sans bordure affichant un voyant LED discret en bas à droite de l'écran."""
+    """Fenêtre overlay sans bordure affichant un voyant LED discret en bas à droite de l'écran, juste au-dessus de l'heure."""
 
     def __init__(
         self,
         master: tk.Misc,
         initial_mode: str = "normal",
         enabled: bool = True,
-        size: int = 18,
-        margin_x: int = 20,
-        margin_y: int = 18,
+        size: int = 22,
+        margin_x: int = 45,
+        margin_y: int = 10,
     ) -> None:
         self.master = master
         self.current_mode = initial_mode
@@ -66,35 +66,59 @@ class ScreenIndicator:
         if self.enabled:
             self._create_window()
 
-    def _get_work_area(self) -> tuple[int, int]:
-        """Récupère les coordonnées du coin inférieur droit de la zone de travail de l'écran (hors barre des tâches)."""
+    def _get_target_coordinates(self) -> tuple[int, int]:
+        """Calcule les coordonnées (x, y) de la diode pour se placer juste au-dessus de l'horloge Windows."""
+        screen_w = self.master.winfo_screenwidth()
+        screen_h = self.master.winfo_screenheight()
+
+        work_right = screen_w
+        work_bottom = screen_h - 48
+
         if sys.platform == "win32":
             try:
                 import ctypes
                 from ctypes import wintypes
+                from src.alfred.core.window import _ensure_desktop_access
 
+                _ensure_desktop_access()
                 user32 = ctypes.windll.user32
-                SPI_GETWORKAREA = 0x0030
+                hmon = user32.MonitorFromPoint(wintypes.POINT(0, 0), 1)  # MONITOR_DEFAULTTOPRIMARY
 
-                class RECT(ctypes.Structure):
+                class MONITORINFO(ctypes.Structure):
                     _fields_ = [
-                        ("left", wintypes.LONG),
-                        ("top", wintypes.LONG),
-                        ("right", wintypes.LONG),
-                        ("bottom", wintypes.LONG),
+                        ("cbSize", wintypes.DWORD),
+                        ("rcMonitor", wintypes.RECT),
+                        ("rcWork", wintypes.RECT),
+                        ("dwFlags", wintypes.DWORD),
                     ]
 
-                rect = RECT()
-                if user32.SystemParametersInfoW(SPI_GETWORKAREA, 0, ctypes.byref(rect), 0):
-                    return (int(rect.right), int(rect.bottom))
-            except Exception as e:
-                logger.debug("Erreur lors de la récupération de la zone de travail Windows : %s", e)
+                mi = MONITORINFO()
+                mi.cbSize = ctypes.sizeof(MONITORINFO)
+                if user32.GetMonitorInfoW(hmon, ctypes.byref(mi)):
+                    # Compensation du facteur d'échelle DPI entre Win32 et Tkinter
+                    scale_x = mi.rcMonitor.right / screen_w if screen_w > 0 else 1.0
+                    scale_y = mi.rcMonitor.bottom / screen_h if screen_h > 0 else 1.0
 
-        # Fallback via Tkinter
-        screen_w = self.master.winfo_screenwidth()
-        screen_h = self.master.winfo_screenheight()
-        # Marge estimée pour la barre des tâches standard Windows (48px)
-        return (screen_w, screen_h - 48)
+                    work_right = int(mi.rcWork.right / scale_x)
+                    work_bottom = int(mi.rcWork.bottom / scale_y)
+            except Exception as e:
+                logger.debug("Erreur lors de la récupération du moniteur Windows : %s", e)
+
+        pos_x = work_right - self.size - self.margin_x
+        pos_y = work_bottom - self.size - self.margin_y
+
+        # Sécurité : s'assurer que la fenêtre est strictement dans l'écran visible
+        pos_x = max(0, min(pos_x, screen_w - self.size))
+        pos_y = max(0, min(pos_y, screen_h - self.size))
+
+        return (pos_x, pos_y)
+
+    def reposition(self) -> None:
+        """Recalcule et réapplique la position de la diode au-dessus de l'horloge."""
+        if not self._window:
+            return
+        pos_x, pos_y = self._get_target_coordinates()
+        self._window.geometry(f"{self.size}x{self.size}+{pos_x}+{pos_y}")
 
     def _create_window(self) -> None:
         """Crée la fenêtre Toplevel sans bordure et transparente."""
@@ -112,11 +136,8 @@ class ScreenIndicator:
 
             self._window.configure(bg=TRANSPARENT_COLOR_KEY)
 
-            # Calcul du positionnement
-            right, bottom = self._get_work_area()
-            pos_x = right - self.size - self.margin_x
-            pos_y = bottom - self.size - self.margin_y
-
+            # Positionnement calculé
+            pos_x, pos_y = self._get_target_coordinates()
             self._window.geometry(f"{self.size}x{self.size}+{pos_x}+{pos_y}")
 
             # Création du canvas
@@ -130,8 +151,11 @@ class ScreenIndicator:
             )
             self._canvas.pack(fill="both", expand=True)
 
-            # Dessin de la pastille LED
+            # Dessin initial de la diode
             self._draw_indicator()
+
+            # Forcer le rendu Tkinter avant les styles étendus Windows
+            self._window.update_idletasks()
 
             # Rendre la fenêtre traversable par les clics de souris sous Windows (Click-Through)
             self._apply_click_through()
@@ -173,33 +197,29 @@ class ScreenIndicator:
         self._canvas.delete("all")
 
         colors = MODE_COLORS.get(self.current_mode.lower(), DEFAULT_MODE_COLOR)
-        pad = 2
-        s = self.size - pad
+        s = self.size
 
         # 1. Anneau extérieur sombre pour un contraste optimal quel que soit le fond d'écran
         self._canvas.create_oval(
-            pad - 1, pad - 1, s + 1, s + 1,
-            fill="#111827",
-            outline="#1F2937",
-            width=1,
+            1, 1, s - 1, s - 1,
+            fill="#0F172A",
+            outline="#334155",
+            width=1.5,
         )
 
         # 2. Cercle principal lumineux
+        pad = 3
         self._canvas.create_oval(
-            pad, pad, s, s,
+            pad, pad, s - pad, s - pad,
             fill=colors["main"],
             outline=colors["glow"],
             width=1,
         )
 
         # 3. Petit reflet brillant (effet diode / voyant allumé)
-        reflet_x1 = pad + 3
-        reflet_y1 = pad + 2
-        reflet_x2 = pad + 6
-        reflet_y2 = pad + 5
         self._canvas.create_oval(
-            reflet_x1, reflet_y1, reflet_x2, reflet_y2,
-            fill=colors["highlight"],
+            pad + 2, pad + 1, pad + 6, pad + 4,
+            fill="#FFFFFF",
             outline="",
         )
 
@@ -208,6 +228,11 @@ class ScreenIndicator:
         self.current_mode = mode
         if self._window and self._canvas and self.enabled:
             self._draw_indicator()
+            try:
+                self._window.attributes("-topmost", True)
+                self._window.lift()
+            except Exception:
+                pass
 
     def set_enabled(self, enabled: bool) -> None:
         """Active ou désactive la visibilité du voyant."""
