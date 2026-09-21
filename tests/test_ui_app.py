@@ -100,6 +100,7 @@ def test_alfred_app_minimize_and_restore_tray():
         config_manager=config_mgr,
     )
     hook_service = MagicMock()
+    config_mgr.app_config.ui.start_minimized = True
 
     with patch("pystray.Icon"):
         app = AlfredApp(

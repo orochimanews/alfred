@@ -160,6 +160,7 @@ class DashboardView(ctk.CTkFrame):
 
         # Raccourcis et statut du Déplacement Dynamique (Move)
         self.btn_boost_badge: ctk.CTkButton | None = None
+        self.btn_move_grid_badge: ctk.CTkButton | None = None
         move_cfg = self.config_manager.move_config
         if move_cfg.enabled:
             lbl_move = ctk.CTkLabel(
@@ -184,11 +185,32 @@ class DashboardView(ctk.CTkFrame):
             self.btn_boost_badge.pack(side="left", padx=4)
             ToolTip(self.btn_boost_badge, "Bascule la vitesse rapide (Boost) pour les déplacements curseur au clavier")
 
+            if move_cfg.grid_enabled:
+                is_grid_active = self.move_manager.is_grid_active if self.move_manager else False
+                self.btn_move_grid_badge = ctk.CTkButton(
+                    btn_box,
+                    text=f"⊞ Grille ACTIVE [{move_cfg.grid_toggle_key}]" if is_grid_active else f"⊞ Grille [{move_cfg.grid_toggle_key}]",
+                    width=110,
+                    height=26,
+                    font=self.theme_manager.get_font(size_offset=-2, weight="bold"),
+                    fg_color=("#10B981", "#059669") if is_grid_active else ("gray70", "gray30"),
+                    hover_color=("#059669", "#047857") if is_grid_active else ("gray60", "gray40"),
+                    command=self._on_move_grid_badge_clicked,
+                )
+                self.btn_move_grid_badge.pack(side="left", padx=4)
+                ToolTip(self.btn_move_grid_badge, "Bascule le pavé numérique entre déplacement curseur et grille 3x3")
+
     def _on_boost_badge_clicked(self) -> None:
         """Bascule le mode boost via clic UI."""
         if self.move_manager:
             self.move_manager.toggle_boost()
             self._update_boost_badge()
+
+    def _on_move_grid_badge_clicked(self) -> None:
+        """Bascule le mode grille pavé numérique via clic UI."""
+        if self.move_manager:
+            self.move_manager.toggle_grid()
+            self._update_move_grid_badge()
 
     def _build_logs_card(self) -> None:
         """Crée la section de journalisation des actions en direct (format compact)."""
@@ -263,10 +285,23 @@ class DashboardView(ctk.CTkFrame):
             hover_color=("#7C3AED", "#6D28D9") if is_boosted else ("gray60", "gray40"),
         )
 
+    def _update_move_grid_badge(self) -> None:
+        """Met à jour l'apparence du bouton de la grille pavé numérique."""
+        if not hasattr(self, "btn_move_grid_badge") or self.btn_move_grid_badge is None:
+            return
+        move_cfg = self.config_manager.move_config
+        is_grid_active = self.move_manager.is_grid_active if self.move_manager else False
+        self.btn_move_grid_badge.configure(
+            text=f"⊞ Grille ACTIVE [{move_cfg.grid_toggle_key}]" if is_grid_active else f"⊞ Grille [{move_cfg.grid_toggle_key}]",
+            fg_color=("#10B981", "#059669") if is_grid_active else ("gray70", "gray30"),
+            hover_color=("#059669", "#047857") if is_grid_active else ("gray60", "gray40"),
+        )
+
     def refresh(self) -> None:
         """Met à jour l'affichage lors d'un changement d'état."""
         self._update_mode_badge()
         self._update_boost_badge()
+        self._update_move_grid_badge()
         self.refresh_logs()
         if hasattr(self, "chk_start_minimized"):
             if getattr(self.config_manager.app_config.ui, "start_minimized", True):

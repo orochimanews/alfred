@@ -21,7 +21,7 @@ active_modes = ["special"]
 # Les alias du pavé numérique sont automatiquement détectés.
 
 key_up = "8"              # Déplacement vers le haut (ex: Pavé numérique 8)
-key_down = "5"            # Déplacement vers le bas (ex: Pavé numérique 5)
+key_down = "2"            # Déplacement vers le bas (ex: Pavé numérique 5)
 key_left = "4"            # Déplacement vers la gauche (ex: Pavé numérique 4)
 key_right = "6"           # Déplacement vers la droite (ex: Pavé numérique 6)
 
@@ -38,7 +38,7 @@ key_down_right = "3"      # Diagonale bas-droite
 # ------------------------------------------------------------------------------
 # Vitesse initiale au moment de l'appui (en pixels par seconde)
 # Une valeur modérée permet un contrôle précis au pixel près lors d'un tap bref.
-initial_speed = 300.0
+initial_speed = 600.0
 
 # Vitesse maximale atteignable lorsque la touche reste maintenue (en pixels/s)
 max_speed = 1800.0
@@ -60,6 +60,34 @@ update_interval_ms = 16
 # ------------------------------------------------------------------------------
 # Permet de basculer instantanément la vitesse avec une touche configurable
 boost_enabled = true
-boost_toggle_key = "0"    # Touche de bascule boost (ex: "0", "num_0")
-boost_multiplier = 2.5    # Multiplicateur appliqué à la vitesse quand le boost est actif
+boost_toggle_key = "s"    # Touche de bascule boost (ex: "0", "num_0")
+boost_multiplier = 4.0    # Multiplicateur appliqué à la vitesse quand le boost est actif
 start_boosted = false     # État initial au démarrage de l'application
+
+# ------------------------------------------------------------------------------
+# Grille 3x3 sur Pavé Numérique (Move Grid Navigation)
+# ------------------------------------------------------------------------------
+# Permet de basculer le comportement du pavé numérique :
+# - Par défaut : déplacement fluide du curseur (touches 8, 2, 4, 6, 7, 9, 1, 3).
+# - En mode Grille (après appui sur grid_toggle_key) : saut instantané du curseur
+#   au centre de l'une des 9 cases réparties sur l'écran.
+# Un nouvel appui sur grid_toggle_key désactive la grille et restaure le déplacement.
+grid_enabled = true
+grid_toggle_key = "decimal"    # Touche toggle (ex: "decimal", ".", ",", "num_0", "0")
+grid_exit_after_jump = false   # Si true, désactive la grille après un premier saut
+
+# Mappage des touches de la grille (9 cases) vers les coordonnées [colonne, ligne] :
+#  Ligne 0 (haut)   : 7 = [0, 0] (haut-gauche),   8 = [1, 0] (haut-centre),    9 = [2, 0] (haut-droite)
+#  Ligne 1 (milieu) : 4 = [0, 1] (milieu-gauche), 5 = [1, 1] (centre),         6 = [2, 1] (milieu-droite)
+#  Ligne 2 (bas)    : 1 = [0, 2] (bas-gauche),    2 = [1, 2] (bas-centre),     3 = [2, 2] (bas-droite)
+[move.grid_cells]
+"7" = [0, 0]
+"8" = [1, 0]
+"9" = [2, 0]
+"4" = [0, 1]
+"5" = [1, 1]
+"6" = [2, 1]
+"1" = [0, 2]
+"2" = [1, 2]
+"3" = [2, 2]
+

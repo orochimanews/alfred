@@ -134,6 +134,10 @@ class CommandsEngine:
                 self._cmd_zoom(params)
             case "move_boost" | "move_speed_boost":
                 self._cmd_move_boost(params)
+            case "move_grid_toggle" | "move_grid":
+                self._cmd_move_grid_toggle(params)
+            case "move_grid_cell":
+                self._cmd_move_grid_cell(params)
             case _:
                 logger.warning("Commande de type inconnu ignorée : '%s'", cmd_type)
 
@@ -148,6 +152,26 @@ class CommandsEngine:
                 self.move_manager.toggle_boost()
         else:
             self.move_manager.toggle_boost()
+
+    def _cmd_move_grid_toggle(self, params: dict) -> None:
+        """Bascule ou modifie l'état de la grille pavé numérique du module Move."""
+        if not self.move_manager:
+            return
+        if "active" in params:
+            self.move_manager.set_grid_active(bool(params["active"]))
+        elif "toggle" in params:
+            if bool(params["toggle"]):
+                self.move_manager.toggle_grid()
+        else:
+            self.move_manager.toggle_grid()
+
+    def _cmd_move_grid_cell(self, params: dict) -> None:
+        """Déplace le curseur au centre d'une case de la grille pavé numérique."""
+        if not self.move_manager:
+            return
+        col = int(params.get("col", 0))
+        row = int(params.get("row", 0))
+        self.move_manager.jump_grid_cell(col, row)
 
     def _cmd_subgrid(self, params: dict) -> None:
         toggle = bool(params.get("toggle", True))

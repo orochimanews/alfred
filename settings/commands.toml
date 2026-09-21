@@ -230,3 +230,31 @@ type = "move_boost"
 toggle = true
 '''
 
+[commands.move_grid_toggle]
+description = "Bascule ou définit l'état de la grille 3x3 sur le pavé numérique (settings/move.toml)."
+syntax = '{ type = "move_grid_toggle", toggle = true }'
+parameters = [
+    { name = "toggle", type = "bool", default = true, description = "Si true, alterne entre mode déplacement et mode grille pavé numérique" },
+    { name = "active", type = "bool", optional = true, description = "Active (true) ou désactive (false) directement la grille pavé numérique" }
+]
+example = '''
+[[commands]]
+type = "move_grid_toggle"
+toggle = true
+'''
+
+[commands.move_grid_cell]
+description = "Déplace le curseur au centre d'une case de la grille 3x3 pavé numérique (settings/move.toml)."
+syntax = '{ type = "move_grid_cell", col = 1, row = 1 }'
+parameters = [
+    { name = "col", type = "int", description = "Index de colonne (0 à 2)" },
+    { name = "row", type = "int", description = "Index de ligne (0 à 2)" }
+]
+example = '''
+[[commands]]
+type = "move_grid_cell"
+col = 1
+row = 1
+'''
+
+

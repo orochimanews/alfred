@@ -49,6 +49,7 @@ class MoveManager:
         self._lock = threading.RLock()
         self._active_directions: set[str] = set()
         self._is_boosted: bool = bool(config.start_boosted)
+        self._is_grid_active: bool = False
 
         self._move_start_time: float = 0.0
         self._subpixel_x: float = 0.0
@@ -98,6 +99,106 @@ class MoveManager:
         """Définit explicitement l'état du boost."""
         with self._lock:
             self._is_boosted = bool(enabled)
+
+    @property
+    def is_grid_active(self) -> bool:
+        """Indique si le pavé numérique est actuellement en mode grille."""
+        with self._lock:
+            return self._is_grid_active
+
+    def toggle_grid(self) -> bool:
+        """Bascule le pavé numérique entre déplacement dynamique et grille 3x3."""
+        with self._lock:
+            self._is_grid_active = not self._is_grid_active
+            state = self._is_grid_active
+
+        self.stop_all_movement()
+        logger.info("Grille Pavé Numérique (Move Grid) : %s", "ACTIF (3x3)" if state else "INACTIF (Déplacement normal)")
+        if self.state_manager:
+            current_mode = self.state_manager.current_mode
+            self.state_manager.add_log(
+                action_name=f"Grille Pavé Numérique ({'Actif' if state else 'Inactif'})",
+                trigger_key=self.config.grid_toggle_key,
+                mode=current_mode,
+                status="success",
+                details="Grille 3x3 active [7..9, 4..6, 1..3]" if state else "Retour déplacement curseur",
+            )
+        return state
+
+    def set_grid_active(self, enabled: bool) -> None:
+        """Définit explicitement l'état de la grille sur pavé numérique."""
+        with self._lock:
+            self._is_grid_active = bool(enabled)
+        self.stop_all_movement()
+
+    def is_grid_toggle_key(self, key_name: str) -> bool:
+        """Vérifie si une touche correspond à la bascule vers la grille pavé numérique."""
+        if not self.config.enabled or not self.config.grid_enabled:
+            return False
+        k = key_name.lower().strip()
+        return k in self.config.keys_grid_toggle
+
+    def is_grid_cell_key(self, key_name: str) -> bool:
+        """Vérifie si une touche correspond à une case de la grille pavé numérique."""
+        if not self.config.enabled or not self.config.grid_enabled:
+            return False
+        k = key_name.lower().strip()
+        return k in self.config.grid_cells
+
+    def get_grid_cell_center(
+        self,
+        col: int,
+        row: int,
+        screen_width: int | None = None,
+        screen_height: int | None = None
+    ) -> tuple[int, int]:
+        """Calcule les coordonnées exactes (x, y) du centre de la case (col, row) pour une grille 3x3."""
+        if screen_width is None or screen_height is None:
+            screen_width, screen_height = self.mouse.get_screen_size()
+
+        cols, rows = 3, 3
+        col = max(0, min(cols - 1, col))
+        row = max(0, min(rows - 1, row))
+
+        cell_w = screen_width / cols
+        cell_h = screen_height / rows
+
+        center_x = int((col + 0.5) * cell_w)
+        center_y = int((row + 0.5) * cell_h)
+
+        return (center_x, center_y)
+
+    def jump_grid_cell(self, col: int, row: int, trigger_key: str = "") -> tuple[int, int]:
+        """Déplace le curseur au centre de la case (col, row) et journalise l'action."""
+        cx, cy = self.get_grid_cell_center(col, row)
+        self.mouse.set_position(cx, cy)
+        logger.info("Grille Pavé Numérique : Saut à la case [%d, %d] -> (%d, %d)", col, row, cx, cy)
+
+        if self.state_manager:
+            current_mode = self.state_manager.current_mode
+            self.state_manager.add_log(
+                action_name=f"Saut Grille Pavé [{col}, {row}]",
+                trigger_key=trigger_key or f"{col},{row}",
+                mode=current_mode,
+                status="success",
+                details=f"Centre case : ({cx}, {cy})",
+            )
+
+        if self.config.grid_exit_after_jump:
+            self.set_grid_active(False)
+
+        return (cx, cy)
+
+    def jump_grid_by_key(self, key_name: str) -> tuple[int, int] | None:
+        """Si la touche correspond à une case de grille configurée, saute sur cette case."""
+        if not self.config.enabled or not self.config.grid_enabled:
+            return None
+        k = key_name.lower().strip()
+        coords = self.config.grid_cells.get(k)
+        if coords is not None:
+            col, row = coords
+            return self.jump_grid_cell(col, row, trigger_key=key_name)
+        return None
 
     def is_boost_key(self, key_name: str) -> bool:
         """Vérifie si une touche correspond au raccourci de bascule boost."""

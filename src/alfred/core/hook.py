@@ -97,6 +97,7 @@ class KeyboardHookService:
             move_cfg = self.config_manager.move_config
             if data not in move_cfg.active_modes and "all" not in move_cfg.active_modes:
                 self.move_manager.stop_all_movement()
+                self.move_manager.set_grid_active(False)
 
     def _on_key_event(self, event: keyboard.KeyboardEvent) -> bool:
         """Callback appelé pour chaque frappe système.
@@ -123,6 +124,11 @@ class KeyboardHookService:
                     current_mode = self.state_manager.current_mode
                     move_cfg = self.config_manager.move_config
                     if move_cfg.enabled and (current_mode in move_cfg.active_modes or "all" in move_cfg.active_modes):
+                        if self.move_manager.is_grid_active:
+                            for cand in candidate_keys:
+                                if self.move_manager.is_grid_cell_key(cand) or self.move_manager.is_grid_toggle_key(cand):
+                                    return False
+
                         for cand in candidate_keys:
                             if self.move_manager.is_move_key(cand):
                                 self.move_manager.release_key(cand)
@@ -168,18 +174,35 @@ class KeyboardHookService:
                 # Supprimer la touche pour éviter de taper le caractère spécial
                 return False
 
-            # 2. Vérification du déplacement dynamique au clavier (Move)
+            # 2. Vérification du déplacement dynamique au clavier (Move) et Grille Pavé Numérique
             move_cfg = self.config_manager.move_config
             if self.move_manager and move_cfg.enabled and (current_mode in move_cfg.active_modes or "all" in move_cfg.active_modes):
                 for cand in candidate_keys:
-                    # Touche Toggle Boost
+                    # 2a. Touche Toggle Grille Pavé Numérique
+                    if self.move_manager.is_grid_toggle_key(cand):
+                        if not is_repeat:
+                            self.move_manager.toggle_grid()
+                        return False
+
+                    # 2b. Si la grille pavé numérique est active, les touches de cellule effectuent un saut direct
+                    if self.move_manager.is_grid_active:
+                        if self.move_manager.is_grid_cell_key(cand):
+                            if not is_repeat:
+                                threading.Thread(
+                                    target=self.move_manager.jump_grid_by_key,
+                                    args=(cand,),
+                                    daemon=True
+                                ).start()
+                            return False
+
+                    # 2c. Touche Toggle Boost
                     if self.move_manager.is_boost_key(cand):
                         if not is_repeat:
                             self.move_manager.toggle_boost()
                         return False
 
-                    # Touche de déplacement
-                    if self.move_manager.is_move_key(cand):
+                    # 2d. Touche de déplacement continu
+                    if not self.move_manager.is_grid_active and self.move_manager.is_move_key(cand):
                         self.move_manager.press_key(cand)
                         return False
 

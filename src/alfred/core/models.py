@@ -100,6 +100,15 @@ def _normalize_params_from_list(cmd_type: str, items: list[Any]) -> dict[str, An
             if len(items) >= 2:
                 res["multiplier"] = items[1]
             return res if res else {"toggle": True}
+        case "move_grid_toggle" | "move_grid":
+            return {"toggle": items[0]} if items else {"toggle": True}
+        case "move_grid_cell":
+            res = {}
+            if len(items) >= 1:
+                res["col"] = items[0]
+            if len(items) >= 2:
+                res["row"] = items[1]
+            return res
         case _:
             return {"args": items}
 
@@ -377,6 +386,22 @@ def generate_key_aliases(key: str | list[str]) -> set[str]:
         aliases.add(k)
         if k in ("0", "num_0", "num 0", "à"):
             aliases.update(["0", "num_0", "num 0", "0 (pavé num.)", "0 (pave num.)", "à"])
+        elif k in ("decimal", ".", ",", "point", "virgule"):
+            aliases.update([
+                "decimal",
+                ".",
+                ",",
+                "point",
+                "virgule",
+                "decimal (pavé num.)",
+                "decimal (pave num.)",
+                ". (pavé num.)",
+                ". (pave num.)",
+                ", (pavé num.)",
+                ", (pave num.)",
+                "num_decimal",
+                "num decimal",
+            ])
         elif k.startswith("num_") or k.startswith("num "):
             digit = k.replace("num_", "").replace("num ", "").strip()
             aliases.update([
@@ -425,6 +450,13 @@ class MoveConfig:
     boost_multiplier: float = 2.5
     start_boosted: bool = False
 
+    # Grille 3x3 sur Pavé Numérique (Move Grid)
+    grid_enabled: bool = True
+    grid_toggle_key: str = "decimal"
+    grid_exit_after_jump: bool = False
+    grid_cells: dict[str, tuple[int, int]] = field(default_factory=dict)
+    keys_grid_toggle: set[str] = field(default_factory=set)
+
     # Alias résolus pour test rapide
     keys_up: set[str] = field(default_factory=set)
     keys_down: set[str] = field(default_factory=set)
@@ -471,6 +503,26 @@ class MoveConfig:
         boost_multiplier = max(1.0, float(move_data.get("boost_multiplier", 2.5)))
         start_boosted = bool(move_data.get("start_boosted", False))
 
+        grid_enabled = bool(move_data.get("grid_enabled", True))
+        grid_toggle_key = str(move_data.get("grid_toggle_key", "decimal")).strip()
+        grid_exit_after_jump = bool(move_data.get("grid_exit_after_jump", False))
+        keys_grid_toggle = generate_key_aliases(grid_toggle_key)
+
+        grid_cells_raw = move_data.get("grid_cells")
+        if grid_cells_raw is None:
+            grid_cells_raw = {
+                "7": [0, 0], "8": [1, 0], "9": [2, 0],
+                "4": [0, 1], "5": [1, 1], "6": [2, 1],
+                "1": [0, 2], "2": [1, 2], "3": [2, 2],
+            }
+
+        grid_cells: dict[str, tuple[int, int]] = {}
+        for cell_key, cell_coords in grid_cells_raw.items():
+            if isinstance(cell_coords, (list, tuple)) and len(cell_coords) >= 2:
+                coords = (int(cell_coords[0]), int(cell_coords[1]))
+                for alias in generate_key_aliases(str(cell_key)):
+                    grid_cells[alias] = coords
+
         keys_up = generate_key_aliases(key_up)
         keys_down = generate_key_aliases(key_down)
         keys_left = generate_key_aliases(key_left)
@@ -513,6 +565,11 @@ class MoveConfig:
             boost_toggle_key=boost_toggle_key,
             boost_multiplier=boost_multiplier,
             start_boosted=start_boosted,
+            grid_enabled=grid_enabled,
+            grid_toggle_key=grid_toggle_key,
+            grid_exit_after_jump=grid_exit_after_jump,
+            grid_cells=grid_cells,
+            keys_grid_toggle=keys_grid_toggle,
             keys_up=keys_up,
             keys_down=keys_down,
             keys_left=keys_left,
