@@ -1,30 +1,9 @@
 [general]
 app_name = "Alfred"
-default_mode = "normal"
+default_mode = "special"
+start_in_special_mode = true
 close = "ctrl+w"
 
-
-
-[mouse]
-# use_system_speed: si true (défaut), utilise la vitesse configurée sous Windows.
-# Si false, applique la sensibilité personnalisée 'default_speed' ci-dessous (1 à 20).
-use_system_speed = true
-default_speed = 10
-
-[ui]
-theme = "dark"
-color_theme = "blue"
-font_size = 13
-always_on_top = false
-start_minimized = true
-
-
-# ------------------------------------------------------------------------------
-# MODES DISPONIBLES
-# Définition des modes d'Alfred avec leurs rôles.
-# Note : La bascule entre les modes est gérée par les actions dans settings/actions/
-# (ex: settings/actions/toggle_mode.toml pour basculer avec '!')
-# ------------------------------------------------------------------------------
 [modes.normal]
 name = "Normal"
 description = "Mode standard Windows (les touches fonctionnent normalement)."
@@ -40,3 +19,14 @@ description = "Mode grille (déplacement rapide du curseur souris par zone d'éc
 [modes.subgrid]
 name = "Sous-grille"
 description = "Mode sous-grille (division 3x3 de la case courante pour un ciblage ultra précis)."
+
+[mouse]
+use_system_speed = true
+default_speed = 10
+
+[ui]
+theme = "dark"
+color_theme = "blue"
+font_size = 13
+always_on_top = false
+start_minimized = false

@@ -92,23 +92,21 @@ class SettingsModal(ctk.CTkToplevel):
         self.entry_special_key.insert(0, current_special_key or "!")
         self.entry_special_key.pack(side="right")
 
-        # Mode par défaut
-        row_def_mode = ctk.CTkFrame(sec_mode, fg_color="transparent")
-        row_def_mode.pack(fill="x", padx=12, pady=4)
-        ctk.CTkLabel(
-            row_def_mode,
-            text="Mode par Défaut :",
-            font=self.theme_manager.get_font(size_offset=-1)
-        ).pack(side="left")
-        mode_values = list(cfg.modes.keys()) if cfg.modes else ["normal", "special", "grid"]
-        self.combo_default_mode = ctk.CTkComboBox(
-            row_def_mode,
-            values=mode_values,
-            width=120,
-            font=self.theme_manager.get_font(size_offset=-1)
+        # Démarrage automatique en mode spécial
+        row_start_special = ctk.CTkFrame(sec_mode, fg_color="transparent")
+        row_start_special.pack(fill="x", padx=12, pady=4)
+        self.chk_start_in_special_mode = ctk.CTkCheckBox(
+            row_start_special,
+            text="Démarrer automatiquement en mode spécial",
+            font=self.theme_manager.get_font(size_offset=-1),
+            checkbox_width=18,
+            checkbox_height=18,
         )
-        self.combo_default_mode.set(cfg.general.default_mode)
-        self.combo_default_mode.pack(side="right")
+        if getattr(cfg.general, "start_in_special_mode", True):
+            self.chk_start_in_special_mode.select()
+        else:
+            self.chk_start_in_special_mode.deselect()
+        self.chk_start_in_special_mode.pack(side="left")
 
         # Raccourci de fermeture
         row_close = ctk.CTkFrame(sec_mode, fg_color="transparent")
@@ -316,7 +314,8 @@ class SettingsModal(ctk.CTkToplevel):
 
         # Récupération des valeurs
         new_key = self.entry_special_key.get().strip() or "!"
-        new_default_mode = self.combo_default_mode.get().strip() or "normal"
+        new_start_special = bool(self.chk_start_in_special_mode.get())
+        new_default_mode = "special" if new_start_special else "normal"
         new_close = self.entry_close_shortcut.get().strip()
         new_use_sys_speed = bool(self.switch_use_sys_speed.get())
         new_def_speed = int(self.slider_def_speed.get())
@@ -329,6 +328,7 @@ class SettingsModal(ctk.CTkToplevel):
 
         # Affectation
         cfg.general.special_mode_key = new_key
+        cfg.general.start_in_special_mode = new_start_special
         cfg.general.default_mode = new_default_mode
         cfg.general.close = new_close
         for act in self.config_manager.actions:

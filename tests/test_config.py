@@ -10,7 +10,8 @@ def test_config_manager_load_all():
 
     # Vérification config globale
     assert mgr.app_config.general.app_name == "Alfred"
-    assert mgr.app_config.general.default_mode == "normal"
+    assert mgr.app_config.general.default_mode == "special"
+    assert mgr.app_config.general.start_in_special_mode is True
     assert "normal" in mgr.app_config.modes
     assert "special" in mgr.app_config.modes
     assert "grid" in mgr.app_config.modes
@@ -38,6 +39,7 @@ def test_config_save_and_reload(tmp_path: Path):
     from src.alfred.core.models import ModeConfig
     mgr = ConfigManager(base_dir=tmp_path)
     mgr.app_config.general.default_mode = "special"
+    mgr.app_config.general.start_in_special_mode = False
     mgr.app_config.modes["custom"] = ModeConfig(name="Custom", description="Mode personnalisé")
     mgr.app_config.mouse.use_system_speed = False
     mgr.app_config.mouse.default_speed = 8
@@ -51,6 +53,7 @@ def test_config_save_and_reload(tmp_path: Path):
     mgr2 = ConfigManager(base_dir=tmp_path)
     loaded = mgr2.load_app_config()
     assert loaded.general.default_mode == "special"
+    assert loaded.general.start_in_special_mode is False
     assert "custom" in loaded.modes
     assert loaded.modes["custom"].name == "Custom"
     assert loaded.mouse.use_system_speed is False
@@ -118,4 +121,30 @@ def test_config_manager_frozen_mode(monkeypatch, tmp_path: Path):
     assert mgr.settings_dir == fake_settings
     cfg = mgr.load_app_config()
     assert cfg.general.app_name == "AlfredFrozen"
+
+
+def test_config_start_in_special_mode_inference(tmp_path: Path):
+    # 1. Config vide : doit valoir True par défaut
+    settings_dir = tmp_path / "settings"
+    settings_dir.mkdir(parents=True)
+    cfg_file = settings_dir / "config.toml"
+    cfg_file.write_text("[general]\napp_name = 'Test'\n", encoding="utf-8")
+
+    mgr = ConfigManager(base_dir=tmp_path)
+    loaded = mgr.load_app_config()
+    assert loaded.general.start_in_special_mode is True
+    assert loaded.general.default_mode == "special"
+
+    # 2. Config legacy avec default_mode = "normal"
+    cfg_file.write_text("[general]\ndefault_mode = 'normal'\n", encoding="utf-8")
+    loaded2 = mgr.load_app_config()
+    assert loaded2.general.start_in_special_mode is False
+    assert loaded2.general.default_mode == "normal"
+
+    # 3. Config explicite avec start_in_special_mode = false
+    cfg_file.write_text("[general]\nstart_in_special_mode = false\n", encoding="utf-8")
+    loaded3 = mgr.load_app_config()
+    assert loaded3.general.start_in_special_mode is False
+    assert loaded3.general.default_mode == "normal"
+
 

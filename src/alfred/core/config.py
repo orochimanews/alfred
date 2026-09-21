@@ -83,9 +83,21 @@ class ConfigManager:
                 raw_close = gen_data.get("close_shortcut", "ctrl+w")
             close_shortcut = str(raw_close).strip() if raw_close is not None else "ctrl+w"
 
+            raw_start_special = gen_data.get("start_in_special_mode")
+            if raw_start_special is not None:
+                start_in_special = bool(raw_start_special)
+                default_mode = "special" if start_in_special else gen_data.get("default_mode", "normal")
+            elif "default_mode" in gen_data:
+                default_mode = str(gen_data.get("default_mode", "special"))
+                start_in_special = (default_mode == "special")
+            else:
+                start_in_special = True
+                default_mode = "special"
+
             general = GeneralConfig(
                 app_name=gen_data.get("app_name", "Alfred"),
-                default_mode=gen_data.get("default_mode", "normal"),
+                default_mode=default_mode,
+                start_in_special_mode=start_in_special,
                 close=close_shortcut,
                 special_mode_key=gen_data.get("special_mode_key", ""),
                 special_mode_name=gen_data.get("special_mode_name", "special"),
@@ -150,6 +162,7 @@ class ConfigManager:
             gen_dict: dict[str, Any] = {
                 "app_name": self.app_config.general.app_name,
                 "default_mode": self.app_config.general.default_mode,
+                "start_in_special_mode": self.app_config.general.start_in_special_mode,
                 "close": self.app_config.general.close,
             }
             if self.app_config.general.special_mode_key:

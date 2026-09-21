@@ -441,6 +441,9 @@ class AlfredApp(ctk.CTk):
         self._update_close_shortcut_binding()
 
         # Rafraîchir les vues
+        dash_view = self.views.get("dashboard")
+        if isinstance(dash_view, DashboardView):
+            dash_view.refresh()
         act_view = self.views.get("actions")
         if isinstance(act_view, ActionsView):
             act_view.refresh_actions()

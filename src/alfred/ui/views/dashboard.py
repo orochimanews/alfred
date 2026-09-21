@@ -45,7 +45,7 @@ class DashboardView(ctk.CTkFrame):
         card.grid(row=0, column=0, sticky="ew", padx=10, pady=(8, 4))
         card.grid_columnconfigure(1, weight=1)
 
-        # Indicateur de mode
+        # Indicateur de mode et option démarrage
         lbl_title = ctk.CTkLabel(
             card,
             text="Mode Actif :",
@@ -53,16 +53,34 @@ class DashboardView(ctk.CTkFrame):
         )
         lbl_title.grid(row=0, column=0, padx=12, pady=8, sticky="w")
 
+        mode_box = ctk.CTkFrame(card, fg_color="transparent")
+        mode_box.grid(row=0, column=1, padx=6, pady=4, sticky="w")
+
         self.btn_mode_badge = ctk.CTkButton(
-            card,
+            mode_box,
             text=self.state_manager.current_mode.upper(),
             font=self.theme_manager.get_font(size_offset=2, weight="bold"),
             width=130,
-            height=32,
+            height=28,
             command=self._on_toggle_mode_clicked,
         )
-        self.btn_mode_badge.grid(row=0, column=1, padx=6, pady=8, sticky="w")
+        self.btn_mode_badge.pack(anchor="w")
         self._update_mode_badge()
+
+        self.chk_start_in_special_mode = ctk.CTkCheckBox(
+            mode_box,
+            text="Démarrer en mode spécial",
+            font=self.theme_manager.get_font(size_offset=-2),
+            checkbox_width=16,
+            checkbox_height=16,
+            command=self._on_toggle_start_in_special_mode,
+        )
+        if getattr(self.config_manager.app_config.general, "start_in_special_mode", True):
+            self.chk_start_in_special_mode.select()
+        else:
+            self.chk_start_in_special_mode.deselect()
+        self.chk_start_in_special_mode.pack(anchor="w", pady=(3, 0))
+        ToolTip(self.chk_start_in_special_mode, "Démarrer automatiquement Alfred en mode spécial au lancement")
 
         # Bloc droit sur la ligne de Mode : Raccourci de bascule et Bouton Minimiser
         right_panel = ctk.CTkFrame(card, fg_color="transparent")
@@ -273,6 +291,14 @@ class DashboardView(ctk.CTkFrame):
             self.config_manager.app_config.ui.start_minimized = is_checked
             self.config_manager.save_app_config()
 
+    def _on_toggle_start_in_special_mode(self) -> None:
+        """Met à jour l'option start_in_special_mode depuis le tableau de bord et sauvegarde dans config.toml."""
+        if hasattr(self, "chk_start_in_special_mode"):
+            is_checked = bool(self.chk_start_in_special_mode.get())
+            self.config_manager.app_config.general.start_in_special_mode = is_checked
+            self.config_manager.app_config.general.default_mode = "special" if is_checked else "normal"
+            self.config_manager.save_app_config()
+
     def _update_boost_badge(self) -> None:
         """Met à jour l'apparence du bouton boost."""
         if not hasattr(self, "btn_boost_badge") or self.btn_boost_badge is None:
@@ -308,6 +334,11 @@ class DashboardView(ctk.CTkFrame):
                 self.chk_start_minimized.select()
             else:
                 self.chk_start_minimized.deselect()
+        if hasattr(self, "chk_start_in_special_mode"):
+            if getattr(self.config_manager.app_config.general, "start_in_special_mode", True):
+                self.chk_start_in_special_mode.select()
+            else:
+                self.chk_start_in_special_mode.deselect()
 
     def refresh_logs(self) -> None:
         """Recharge la liste visuelle des logs."""

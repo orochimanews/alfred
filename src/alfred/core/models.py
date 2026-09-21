@@ -667,7 +667,8 @@ class ModeConfig:
 class GeneralConfig:
     """Configuration générale du système."""
     app_name: str = "Alfred"
-    default_mode: str = "normal"
+    default_mode: str = "special"
+    start_in_special_mode: bool = True
     close: str = "ctrl+w"
     special_mode_key: str = ""
     special_mode_name: str = "special"

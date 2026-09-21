@@ -148,8 +148,11 @@ def main() -> None:
     config_mgr.load_all()
 
     # 2. Initialisation de l'état
-    default_mode = config_mgr.app_config.general.default_mode
-    state_mgr = StateManager(initial_mode=default_mode)
+    gen_cfg = config_mgr.app_config.general
+    initial_mode = "special" if getattr(gen_cfg, "start_in_special_mode", True) else getattr(gen_cfg, "default_mode", "normal")
+    if not getattr(gen_cfg, "start_in_special_mode", True) and initial_mode == "special":
+        initial_mode = "normal"
+    state_mgr = StateManager(initial_mode=initial_mode)
 
     # 3. Initialisation des sous-systèmes
     move_mgr = MoveManager(

@@ -132,6 +132,10 @@ def test_alfred_app_minimize_and_restore_tray():
             assert hasattr(dash, "chk_start_minimized")
             assert dash.chk_start_minimized.get() == 1
 
+            # Test de la case à cocher Démarrer en mode spécial sur le Dashboard
+            assert hasattr(dash, "chk_start_in_special_mode")
+            assert dash.chk_start_in_special_mode.get() == 1
+
             with patch.object(config_mgr, "save_app_config") as mock_save:
                 dash.chk_start_minimized.deselect()
                 dash._on_toggle_start_minimized()
@@ -142,7 +146,19 @@ def test_alfred_app_minimize_and_restore_tray():
                 dash._on_toggle_start_minimized()
                 assert config_mgr.app_config.ui.start_minimized is True
 
-            # Test de la case à cocher Démarrer minimisé dans SettingsModal
+            with patch.object(config_mgr, "save_app_config") as mock_save_special:
+                dash.chk_start_in_special_mode.deselect()
+                dash._on_toggle_start_in_special_mode()
+                assert config_mgr.app_config.general.start_in_special_mode is False
+                assert config_mgr.app_config.general.default_mode == "normal"
+                mock_save_special.assert_called_once()
+
+                dash.chk_start_in_special_mode.select()
+                dash._on_toggle_start_in_special_mode()
+                assert config_mgr.app_config.general.start_in_special_mode is True
+                assert config_mgr.app_config.general.default_mode == "special"
+
+            # Test des cases à cocher dans SettingsModal
             from src.alfred.ui.views.settings_modal import SettingsModal
             from src.alfred.ui.theme import ThemeManager
             theme_mgr = ThemeManager(config_mgr.app_config.ui)
@@ -153,12 +169,20 @@ def test_alfred_app_minimize_and_restore_tray():
             )
             assert hasattr(modal, "chk_start_minimized")
             assert modal.chk_start_minimized.get() == 1
+            assert hasattr(modal, "chk_start_in_special_mode")
+            assert modal.chk_start_in_special_mode.get() == 1
+
             with patch.object(config_mgr, "save_app_config"):
                 modal.chk_start_minimized.deselect()
+                modal.chk_start_in_special_mode.deselect()
                 modal._save_changes()
                 assert config_mgr.app_config.ui.start_minimized is False
+                assert config_mgr.app_config.general.start_in_special_mode is False
+                assert config_mgr.app_config.general.default_mode == "normal"
                 # Restaurer pour la fin du test
                 config_mgr.app_config.ui.start_minimized = True
+                config_mgr.app_config.general.start_in_special_mode = True
+                config_mgr.app_config.general.default_mode = "special"
         finally:
             try:
                 app.close()
