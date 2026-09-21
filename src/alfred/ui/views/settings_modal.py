@@ -25,7 +25,7 @@ class SettingsModal(ctk.CTkToplevel):
         self.on_saved_callback = on_saved_callback
 
         self.title("Paramètres - Alfred")
-        self.geometry("460x540")
+        self.geometry("490x620")
         self.resizable(False, False)
 
         # Rendre modal
@@ -117,6 +117,7 @@ class SettingsModal(ctk.CTkToplevel):
             font=self.theme_manager.get_font(size_offset=-1),
             checkbox_width=18,
             checkbox_height=18,
+            command=self._on_toggle_auto_exit_text,
         )
         if getattr(cfg.general, "auto_exit_on_text_input", True):
             self.chk_auto_exit_on_text.select()
@@ -126,10 +127,10 @@ class SettingsModal(ctk.CTkToplevel):
 
         # Retourner en mode spécial lors de l'envoi avec Entrée
         row_auto_return = ctk.CTkFrame(sec_mode, fg_color="transparent")
-        row_auto_return.pack(fill="x", padx=12, pady=4)
+        row_auto_return.pack(fill="x", padx=(28, 12), pady=(2, 4))
         self.chk_auto_return_on_enter = ctk.CTkCheckBox(
             row_auto_return,
-            text="Retourner en mode spécial lors de l'envoi avec Entrée",
+            text="↳ Revenir en mode spécial après envoi (touche Entrée)",
             font=self.theme_manager.get_font(size_offset=-1),
             checkbox_width=18,
             checkbox_height=18,
@@ -138,6 +139,8 @@ class SettingsModal(ctk.CTkToplevel):
             self.chk_auto_return_on_enter.select()
         else:
             self.chk_auto_return_on_enter.deselect()
+        if not getattr(cfg.general, "auto_exit_on_text_input", True):
+            self.chk_auto_return_on_enter.configure(state="disabled")
         self.chk_auto_return_on_enter.pack(side="left")
 
         # Raccourci de fermeture
@@ -321,6 +324,13 @@ class SettingsModal(ctk.CTkToplevel):
             font=self.theme_manager.get_font(size_offset=0, weight="bold"),
             command=self._save_changes
         ).pack(side="right", padx=4, fill="x", expand=True)
+
+    def _on_toggle_auto_exit_text(self) -> None:
+        """Active ou désactive la sous-option de retour automatique sur Entrée."""
+        if bool(self.chk_auto_exit_on_text.get()):
+            self.chk_auto_return_on_enter.configure(state="normal")
+        else:
+            self.chk_auto_return_on_enter.configure(state="disabled")
 
     def _on_toggle_sys_speed(self) -> None:
         self._update_speed_slider_state()
