@@ -40,6 +40,7 @@ class TextInputFocusWatcher:
         self.state_manager = state_manager
         self.config_manager = config_manager
         self._thread: threading.Thread | None = None
+        self._thread_id: int | None = None
         self._stop_event = threading.Event()
         self._is_running: bool = False
         self._lock = threading.Lock()
@@ -75,6 +76,12 @@ class TextInputFocusWatcher:
                 return
             self._is_running = False
             self._stop_event.set()
+            if self._thread_id:
+                try:
+                    # Envoie WM_QUIT (0x0012) pour réveiller et quitter GetMessageW instantanément
+                    ctypes.windll.user32.PostThreadMessageW(self._thread_id, 0x0012, 0, 0)
+                except Exception:
+                    pass
 
         if self._thread and self._thread.is_alive():
             self._thread.join(timeout=1.5)
@@ -82,9 +89,11 @@ class TextInputFocusWatcher:
         logger.info("Service de détection de champ texte arrêté.")
 
     def _worker_loop(self) -> None:
-        """Boucle d'écoute Win32 / COM pour UI Automation."""
+        """Boucle d'écoute Win32 / COM pour UI Automation (0.00% CPU au repos)."""
         user32 = ctypes.windll.user32
-        ole32 = ctypes.windll.ole32
+        kernel32 = ctypes.windll.kernel32
+
+        self._thread_id = kernel32.GetCurrentThreadId()
 
         handler = None
         uia = None
@@ -112,12 +121,11 @@ class TextInputFocusWatcher:
             logger.debug("Gestionnaire de focus UI Automation enregistré avec succès.")
 
             msg = wintypes.MSG()
-            while not self._stop_event.is_set():
-                # Attendre les messages ou le timeout de 50ms pour vérifier _stop_event
-                user32.MsgWaitForMultipleObjects(0, None, False, 50, 0x04FF)  # QS_ALLINPUT
-                while user32.PeekMessageW(ctypes.byref(msg), 0, 0, 0, 1):  # PM_REMOVE = 1
-                    user32.TranslateMessage(ctypes.byref(msg))
-                    user32.DispatchMessageW(ctypes.byref(msg))
+            # Boucle bloquante à 0.000% CPU : le thread est mis en sommeil profond dans le noyau
+            # Windows et ne se réveille QUE lors de la réception d'un événement ou de WM_QUIT
+            while user32.GetMessageW(ctypes.byref(msg), 0, 0, 0) > 0:
+                user32.TranslateMessage(ctypes.byref(msg))
+                user32.DispatchMessageW(ctypes.byref(msg))
 
         except Exception as err:
             logger.warning(
