@@ -83,6 +83,19 @@ class ConfigManager:
                 raw_close = gen_data.get("close_shortcut", "ctrl+w")
             close_shortcut = str(raw_close).strip() if raw_close is not None else "ctrl+w"
 
+            raw_quit = gen_data.get("quit")
+            if raw_quit is None:
+                raw_quit = gen_data.get("quit_key")
+            if raw_quit is None:
+                raw_quit = gen_data.get("quit_shortcut")
+            if raw_quit is None:
+                raw_quit = gen_data.get("exit_shortcut")
+            if raw_quit is None:
+                raw_quit = gen_data.get("exit_key")
+            if raw_quit is None:
+                raw_quit = gen_data.get("exit")
+            quit_shortcut = str(raw_quit).strip() if raw_quit is not None else "ctrl+shift+q"
+
             raw_start_special = gen_data.get("start_in_special_mode")
             if raw_start_special is not None:
                 start_in_special = bool(raw_start_special)
@@ -99,6 +112,7 @@ class ConfigManager:
                 default_mode=default_mode,
                 start_in_special_mode=start_in_special,
                 close=close_shortcut,
+                quit=quit_shortcut,
                 special_mode_key=gen_data.get("special_mode_key", ""),
                 special_mode_name=gen_data.get("special_mode_name", "special"),
                 toggle_special_mode=bool(gen_data.get("toggle_special_mode", True)),
@@ -169,6 +183,7 @@ class ConfigManager:
                 "auto_exit_on_text_input": self.app_config.general.auto_exit_on_text_input,
                 "auto_return_on_enter": self.app_config.general.auto_return_on_enter,
                 "close": self.app_config.general.close,
+                "quit": self.app_config.general.quit,
             }
             if self.app_config.general.special_mode_key:
                 gen_dict["special_mode_key"] = self.app_config.general.special_mode_key

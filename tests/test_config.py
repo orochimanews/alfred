@@ -150,3 +150,28 @@ def test_config_start_in_special_mode_inference(tmp_path: Path):
     assert loaded3.general.default_mode == "normal"
 
 
+def test_config_quit_setting(tmp_path: Path):
+    """Vérifie le chargement, la persistance et les alias du raccourci global quit dans config.toml."""
+    mgr = ConfigManager(base_dir=tmp_path)
+    loaded = mgr.load_app_config()
+    # Valeur par défaut
+    assert loaded.general.quit == "ctrl+shift+q"
+    assert loaded.general.quit_key == "ctrl+shift+q"
+
+    # Sauvegarde d'une nouvelle valeur
+    loaded.general.quit = "ctrl+alt+q"
+    assert mgr.save_app_config() is True
+
+    # Rechargement
+    mgr2 = ConfigManager(base_dir=tmp_path)
+    loaded2 = mgr2.load_app_config()
+    assert loaded2.general.quit == "ctrl+alt+q"
+
+    # Test avec alias 'quit_key' dans le fichier TOML
+    cfg_file = tmp_path / "settings" / "config.toml"
+    cfg_file.write_text("[general]\nquit_key = 'f12'\n", encoding="utf-8")
+    loaded3 = mgr2.load_app_config()
+    assert loaded3.general.quit == "f12"
+
+
+

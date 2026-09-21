@@ -56,6 +56,9 @@ def test_alfred_app_dynamic_close_binding_and_execution():
         )
 
         try:
+            # 0. Vérifier que hook_service a bien reçu le quit_callback
+            hook_service.set_quit_callback.assert_called_once()
+
             # 1. Vérifier que les bindings <Control-w> et <Control-W> existent
             assert "<Control-w>" in app._close_bound_sequences
             assert "<Control-W>" in app._close_bound_sequences
@@ -158,7 +161,7 @@ def test_alfred_app_minimize_and_restore_tray():
                 assert config_mgr.app_config.general.start_in_special_mode is True
                 assert config_mgr.app_config.general.default_mode == "special"
 
-            # Test des cases à cocher dans SettingsModal
+            # Test des cases à cocher et champs dans SettingsModal
             from src.alfred.ui.views.settings_modal import SettingsModal
             from src.alfred.ui.theme import ThemeManager
             theme_mgr = ThemeManager(config_mgr.app_config.ui)
@@ -171,21 +174,28 @@ def test_alfred_app_minimize_and_restore_tray():
             assert modal.chk_start_minimized.get() == 1
             assert hasattr(modal, "chk_start_in_special_mode")
             assert modal.chk_start_in_special_mode.get() == 1
+            assert hasattr(modal, "entry_quit_shortcut")
+            assert modal.entry_quit_shortcut.get() == config_mgr.app_config.general.quit
 
             with patch.object(config_mgr, "save_app_config"):
                 modal.chk_start_minimized.deselect()
                 modal.chk_start_in_special_mode.deselect()
+                modal.entry_quit_shortcut.delete(0, "end")
+                modal.entry_quit_shortcut.insert(0, "ctrl+alt+q")
                 modal._save_changes()
                 assert config_mgr.app_config.ui.start_minimized is False
                 assert config_mgr.app_config.general.start_in_special_mode is False
                 assert config_mgr.app_config.general.default_mode == "normal"
+                assert config_mgr.app_config.general.quit == "ctrl+alt+q"
                 # Restaurer pour la fin du test
                 config_mgr.app_config.ui.start_minimized = True
                 config_mgr.app_config.general.start_in_special_mode = True
                 config_mgr.app_config.general.default_mode = "special"
+                config_mgr.app_config.general.quit = "ctrl+shift+q"
         finally:
             try:
                 app.close()
             except Exception:
                 pass
+
 

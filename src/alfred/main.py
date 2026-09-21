@@ -185,10 +185,14 @@ def main() -> None:
     text_focus_watcher.start()
 
     if args.headless:
-        logger.info("Mode Headless activé. Appuyez sur Ctrl+C pour quitter.")
+        quit_event = threading.Event()
+        hook_service.set_quit_callback(quit_event.set)
+        commands_engine.set_quit_callback(quit_event.set)
+        logger.info("Mode Headless activé. Utilisez le raccourci configuré ou Ctrl+C pour quitter.")
         try:
-            import keyboard
-            keyboard.wait()
+            while not quit_event.is_set():
+                if quit_event.wait(timeout=0.5):
+                    break
         except KeyboardInterrupt:
             logger.info("Arrêt du mode headless...")
         finally:

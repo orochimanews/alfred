@@ -83,6 +83,12 @@ class AlfredApp(ctk.CTk):
         self.hook_service = hook_service
         self.move_manager = move_manager
 
+        # Enregistrement du callback de fermeture globale pour le hook clavier et les commandes
+        if self.hook_service:
+            self.hook_service.set_quit_callback(lambda: self.after(0, self.close))
+        if self.commands_engine:
+            self.commands_engine.set_quit_callback(lambda: self.after(0, self.close))
+
         self.theme_manager = ThemeManager(self.config_manager.app_config.ui)
 
         self.title("Alfred - Raccourcis à Modes & Grille")

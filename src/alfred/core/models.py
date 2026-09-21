@@ -703,11 +703,20 @@ class GeneralConfig:
     default_mode: str = "special"
     start_in_special_mode: bool = True
     close: str = "ctrl+w"
+    quit: str = "ctrl+shift+q"
     special_mode_key: str = ""
     special_mode_name: str = "special"
     toggle_special_mode: bool = True
     auto_exit_on_text_input: bool = True
     auto_return_on_enter: bool = True
+
+    @property
+    def quit_key(self) -> str:
+        return self.quit
+
+    @quit_key.setter
+    def quit_key(self, val: str) -> None:
+        self.quit = val
 
 
 

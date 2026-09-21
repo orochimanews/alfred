@@ -5,7 +5,7 @@ import sys
 import time
 import threading
 import logging
-from typing import TYPE_CHECKING
+from typing import Callable, TYPE_CHECKING
 import keyboard
 
 if TYPE_CHECKING:
@@ -49,6 +49,93 @@ def _patch_keyboard_windows_listen() -> None:
         logger.warning("Impossible de patcher keyboard._winkeyboard.listen : %s", err)
 
 
+def is_modifier_pressed_win32(mod: str) -> bool:
+    """Vérifie si une touche modificatrice est physiquement enfoncée via Windows API."""
+    if sys.platform != "win32":
+        return False
+    try:
+        import ctypes
+        VK_MAP = {
+            "ctrl": 0x11,        # VK_CONTROL
+            "shift": 0x10,       # VK_SHIFT
+            "alt": 0x12,         # VK_MENU
+            "win": [0x5B, 0x5C], # VK_LWIN, VK_RWIN
+        }
+        vk = VK_MAP.get(mod)
+        if vk is not None:
+            user32 = ctypes.windll.user32
+            if isinstance(vk, list):
+                return any(bool(user32.GetAsyncKeyState(k) & 0x8000) for k in vk)
+            return bool(user32.GetAsyncKeyState(vk) & 0x8000)
+    except Exception:
+        pass
+    return False
+
+
+def match_shortcut(shortcut: str, candidate_keys: list[str], pressed_keys: set[str]) -> bool:
+    """Vérifie si une frappe clavier correspond à un raccourci défini (ex: 'ctrl+shift+q' ou 'f12')."""
+    s = shortcut.strip().lower()
+    if not s:
+        return False
+
+    if s.endswith("++"):
+        parts = [p.strip() for p in s[:-2].split("+") if p.strip()]
+        parts.append("+")
+    else:
+        parts = [p.strip() for p in s.split("+") if p.strip()]
+
+    if not parts:
+        return False
+
+    MODIFIERS_MAP = {
+        "ctrl": "ctrl", "control": "ctrl",
+        "shift": "shift", "maj": "shift",
+        "alt": "alt", "altgr": "alt", "alt gr": "alt",
+        "win": "win", "windows": "win", "super": "win"
+    }
+
+    req_mods: set[str] = set()
+    trigger_key = ""
+    for idx, part in enumerate(parts):
+        if idx < len(parts) - 1 and part in MODIFIERS_MAP:
+            req_mods.add(MODIFIERS_MAP[part])
+        else:
+            if idx == len(parts) - 1:
+                trigger_key = part
+            else:
+                req_mods.add(part)
+
+    KEY_ALIASES = {
+        "esc": {"esc", "escape"},
+        "escape": {"esc", "escape"},
+        "return": {"enter", "return", "entree", "entrée"},
+        "enter": {"enter", "return", "entree", "entrée"},
+        "del": {"del", "delete", "suppr"},
+        "delete": {"del", "delete", "suppr"},
+    }
+    allowed_triggers = KEY_ALIASES.get(trigger_key, {trigger_key})
+    if not any(k in allowed_triggers for k in candidate_keys):
+        return False
+
+    ALL_MODS = ("ctrl", "shift", "alt", "win")
+    MOD_ALIASES = {
+        "ctrl": {"ctrl", "left ctrl", "right ctrl", "control"},
+        "shift": {"shift", "left shift", "right shift", "maj"},
+        "alt": {"alt", "left alt", "right alt", "alt gr", "altgr"},
+        "win": {"win", "windows", "left windows", "right windows", "super"},
+    }
+    for m in ALL_MODS:
+        aliases = MOD_ALIASES[m]
+        is_down = is_modifier_pressed_win32(m) or any(k in pressed_keys for k in aliases)
+        if m in req_mods:
+            if not is_down:
+                return False
+        else:
+            if is_down:
+                return False
+    return True
+
+
 class KeyboardHookService:
     """Service d'interception et de routage des touches clavier."""
 
@@ -67,9 +154,26 @@ class KeyboardHookService:
         self.move_manager = move_manager
         self._hook_installed: bool = False
         self._pressed_keys: set[str] = set()
+        self._quit_callback: Callable[[], None] | None = None
 
         # Surveiller les changements de mode pour couper les mouvements en cours si nécessaire
         self.state_manager.subscribe(self._on_state_event)
+
+    def set_quit_callback(self, callback: Callable[[], None]) -> None:
+        """Définit le callback invoqué lors du déclenchement du raccourci global de fermeture."""
+        self._quit_callback = callback
+
+    def _trigger_quit(self) -> None:
+        """Déclenche la fermeture propre de l'application Alfred."""
+        logger.info("Déclenchement du callback de fermeture globale...")
+        if self._quit_callback:
+            try:
+                self._quit_callback()
+            except Exception as err:
+                logger.error("Erreur lors de l'exécution du quit_callback : %s", err, exc_info=True)
+        else:
+            import os
+            os._exit(0)
 
     def start(self) -> None:
         """Démarre l'écoute globale du clavier."""
@@ -116,6 +220,24 @@ class KeyboardHookService:
                 if "!" not in candidate_keys:
                     candidate_keys.append("!")
 
+            # Normalisation et alias des modificateurs pour le suivi d'état des touches
+            if key_name in ("left ctrl", "right ctrl", "control", "ctrl"):
+                for m in ("ctrl", "control"):
+                    if m not in candidate_keys:
+                        candidate_keys.append(m)
+            elif key_name in ("left shift", "right shift", "shift", "maj"):
+                for m in ("shift", "maj"):
+                    if m not in candidate_keys:
+                        candidate_keys.append(m)
+            elif key_name in ("left alt", "right alt", "alt", "alt gr", "altgr"):
+                for m in ("alt", "altgr"):
+                    if m not in candidate_keys:
+                        candidate_keys.append(m)
+            elif key_name in ("left windows", "right windows", "windows", "win", "super"):
+                for m in ("win", "windows"):
+                    if m not in candidate_keys:
+                        candidate_keys.append(m)
+
             # Si c'est un relâchement de touche, nettoyer les touches maintenues et notifier move_manager
             if event.event_type == keyboard.KEY_UP:
                 for k in candidate_keys:
@@ -141,6 +263,28 @@ class KeyboardHookService:
             is_repeat = any(k in self._pressed_keys for k in candidate_keys)
             for k in candidate_keys:
                 self._pressed_keys.add(k)
+
+            # 0. Vérification prioritaire du raccourci global pour QUITTER Alfred
+            # Fonctionne toujours, même en arrière-plan / non sélectionné et quel que soit le mode actif
+            gen_cfg = self.config_manager.app_config.general
+            quit_shortcut = getattr(gen_cfg, "quit", "").strip()
+            if quit_shortcut and not is_repeat:
+                if match_shortcut(quit_shortcut, candidate_keys, self._pressed_keys):
+                    logger.info("Raccourci global de fermeture '%s' détecté.", quit_shortcut)
+                    self.state_manager.add_log(
+                        action_name="Quitter Alfred (Raccourci Global)",
+                        trigger_key=key_name,
+                        mode=self.state_manager.current_mode,
+                        status="success",
+                        details=f"Raccourci : {quit_shortcut}",
+                    )
+                    threading.Thread(
+                        target=self._trigger_quit,
+                        daemon=True,
+                        name="Alfred-GlobalQuitThread",
+                    ).start()
+                    # Supprimer la frappe pour éviter qu'elle soit envoyée à l'application active
+                    return False
 
             # Si le service est désactivé via le state manager, ne rien intercepter
             if not self.state_manager.is_hook_enabled:

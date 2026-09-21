@@ -37,6 +37,11 @@ class CommandsEngine:
         self.move_manager = move_manager
         self._is_fast_mouse_speed: bool = False
         self._previous_mouse_speed: int | None = None
+        self._quit_callback: Any = None
+
+    def set_quit_callback(self, callback: Any) -> None:
+        """Définit le callback pour les commandes d'arrêt du programme."""
+        self._quit_callback = callback
 
     def execute_action(self, action: Action, trigger_key: str = "") -> bool:
         """Exécute l'action complète (standard ou toggle) et journalise l'événement."""
@@ -141,6 +146,9 @@ class CommandsEngine:
                 self._cmd_move_grid_toggle(params)
             case "move_grid_cell":
                 self._cmd_move_grid_cell(params)
+            case "quit" | "exit":
+                if self._quit_callback:
+                    self._quit_callback()
             case _:
                 logger.warning("Commande de type inconnu ignorée : '%s'", cmd_type)
 

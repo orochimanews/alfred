@@ -257,4 +257,14 @@ col = 1
 row = 1
 '''
 
+[commands.quit]
+description = "Quitte et ferme complètement l'application Alfred proprement."
+syntax = '{ type = "quit" }'
+parameters = []
+example = '''
+[[commands]]
+type = "quit"
+'''
+
+
 

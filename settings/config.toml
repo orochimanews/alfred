@@ -5,6 +5,7 @@ start_in_special_mode = true
 auto_exit_on_text_input = true
 auto_return_on_enter = true
 close = "ctrl+w"
+quit = "ctrl+shift+q"
 special_mode_key = "!"
 
 [modes.normal]
