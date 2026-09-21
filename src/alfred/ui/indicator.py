@@ -68,11 +68,8 @@ class ScreenIndicator:
 
     def _get_target_coordinates(self) -> tuple[int, int]:
         """Calcule les coordonnées (x, y) de la diode depuis l'extrémité en bas à droite de l'écran."""
-        screen_w = self.master.winfo_screenwidth()
-        screen_h = self.master.winfo_screenheight()
-
-        base_x = screen_w
-        base_y = screen_h
+        base_x = self.master.winfo_screenwidth()
+        base_y = self.master.winfo_screenheight()
 
         if sys.platform == "win32":
             try:
@@ -95,22 +92,25 @@ class ScreenIndicator:
                 mi = MONITORINFO()
                 mi.cbSize = ctypes.sizeof(MONITORINFO)
                 if user32.GetMonitorInfoW(hmon, ctypes.byref(mi)):
-                    # Facteur d'échelle DPI entre Win32 et Tkinter
-                    scale_x = mi.rcMonitor.right / screen_w if screen_w > 0 else 1.0
-                    scale_y = mi.rcMonitor.bottom / screen_h if screen_h > 0 else 1.0
-
-                    base_x = int(mi.rcMonitor.right / scale_x)
-                    base_y = int(mi.rcMonitor.bottom / scale_y)
+                    # Dimensions physiques réelles de l'écran sous Windows
+                    base_x = int(mi.rcMonitor.right)
+                    base_y = int(mi.rcMonitor.bottom)
+                else:
+                    sm_w = user32.GetSystemMetrics(0)
+                    sm_h = user32.GetSystemMetrics(1)
+                    if sm_w > 0 and sm_h > 0:
+                        base_x = sm_w
+                        base_y = sm_h
             except Exception as e:
-                logger.debug("Erreur lors de la récupération du moniteur Windows : %s", e)
+                logger.debug("Erreur lors de la récupération des dimensions réelles Windows : %s", e)
 
-        # Calcul depuis l'extrémité inférieure droite de l'écran en pixels
+        # Calcul exact en pixels depuis l'extrémité inférieure droite
         pos_x = base_x - self.size - self.offset_x
         pos_y = base_y - self.size - self.offset_y
 
-        # Sécurité : s'assurer que la fenêtre est strictement dans l'écran visible
-        pos_x = max(0, min(pos_x, screen_w - self.size))
-        pos_y = max(0, min(pos_y, screen_h - self.size))
+        # Sécurité : s'assurer que la fenêtre reste dans l'écran visible
+        pos_x = max(0, min(pos_x, base_x - self.size))
+        pos_y = max(0, min(pos_y, base_y - self.size))
 
         return (pos_x, pos_y)
 
