@@ -305,7 +305,7 @@ class ConfigManager:
         normalized_mode = mode.lower().strip()
 
         for act in self.actions:
-            if act.trigger.lower().strip() == normalized_key:
+            if (act.triggers and normalized_key in act.triggers) or act.trigger.lower().strip() == normalized_key:
                 # Vérifier si l'action est active dans ce mode (ou mode 'all')
                 act_modes = [m.lower().strip() for m in act.modes]
                 if "all" in act_modes or normalized_mode in act_modes:

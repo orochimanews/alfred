@@ -168,6 +168,7 @@ class Action:
     description: str = ""
     modes: list[str] = field(default_factory=lambda: ["special"])
     trigger: str = ""
+    triggers: set[str] = field(default_factory=set)
     commands: list[Command] = field(default_factory=list)
     toggle: bool = False
     states: list[ActionState] = field(default_factory=list)
@@ -180,7 +181,23 @@ class Action:
         modes = data.get("modes", ["special"])
         if isinstance(modes, str):
             modes = [modes]
-        trigger = str(data.get("trigger", "")).lower()
+
+        raw_trigger = data.get("trigger", data.get("triggers", ""))
+        triggers: set[str] = set()
+        if isinstance(raw_trigger, list):
+            for t in raw_trigger:
+                triggers.update(generate_key_aliases(str(t)))
+            trigger = ", ".join(str(t).strip() for t in raw_trigger if str(t).strip()).lower()
+        else:
+            raw_s = str(raw_trigger).strip()
+            trigger = raw_s.lower()
+            if "," in raw_s and raw_s != ",":
+                for t in raw_s.split(","):
+                    if t.strip():
+                        triggers.update(generate_key_aliases(t.strip()))
+            elif raw_s:
+                triggers.update(generate_key_aliases(raw_s))
+
         toggle = bool(data.get("toggle", False))
 
         commands: list[Command] = []
@@ -211,6 +228,7 @@ class Action:
             description=description,
             modes=modes,
             trigger=trigger,
+            triggers=triggers,
             commands=commands,
             toggle=toggle,
             states=states,
@@ -376,8 +394,16 @@ class GridConfig:
 
 
 def generate_key_aliases(key: str | list[str]) -> set[str]:
-    """Génère tous les alias courants pour une touche (chiffre, pavé numérique, séparateurs)."""
-    keys = key if isinstance(key, list) else [key]
+    """Génère tous les alias courants pour une touche ou une liste de touches (chiffre, pavé numérique, séparateurs)."""
+    raw_items = key if isinstance(key, list) else [key]
+    keys: list[str] = []
+    for item in raw_items:
+        s = str(item).strip()
+        if "," in s and s != ",":
+            keys.extend([part.strip() for part in s.split(",") if part.strip()])
+        elif s:
+            keys.append(s)
+
     aliases: set[str] = set()
     for raw in keys:
         k = str(raw).lower().strip()
@@ -523,15 +549,22 @@ class MoveConfig:
         else:
             active_modes = [str(m).lower().strip() for m in raw_modes]
 
-        key_up = str(move_data.get("key_up", "8")).strip()
-        key_down = str(move_data.get("key_down", "5")).strip()
-        key_left = str(move_data.get("key_left", "4")).strip()
-        key_right = str(move_data.get("key_right", "6")).strip()
+        def _parse_key_str(raw: Any, default: str) -> str:
+            if raw is None:
+                return default
+            if isinstance(raw, list):
+                return ", ".join(str(k).strip() for k in raw if str(k).strip())
+            return str(raw).strip()
 
-        key_up_left = str(move_data.get("key_up_left", "7")).strip()
-        key_up_right = str(move_data.get("key_up_right", "9")).strip()
-        key_down_left = str(move_data.get("key_down_left", "1")).strip()
-        key_down_right = str(move_data.get("key_down_right", "3")).strip()
+        key_up = _parse_key_str(move_data.get("key_up"), "8")
+        key_down = _parse_key_str(move_data.get("key_down"), "5")
+        key_left = _parse_key_str(move_data.get("key_left"), "4")
+        key_right = _parse_key_str(move_data.get("key_right"), "6")
+
+        key_up_left = _parse_key_str(move_data.get("key_up_left"), "7")
+        key_up_right = _parse_key_str(move_data.get("key_up_right"), "9")
+        key_down_left = _parse_key_str(move_data.get("key_down_left"), "1")
+        key_down_right = _parse_key_str(move_data.get("key_down_right"), "3")
 
         initial_speed = max(10.0, float(move_data.get("initial_speed", 300.0)))
         max_speed = max(initial_speed, float(move_data.get("max_speed", 1800.0)))

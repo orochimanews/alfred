@@ -106,3 +106,43 @@ def test_grid_config_from_dict():
     assert grid.auto_click is True
     assert grid.cells["a"] == (0, 0)
     assert grid.cells["b"] == (1, 2)
+
+
+def test_action_multi_key_triggers():
+    """Vérifie le support de plusieurs touches de déclenchement pour une action."""
+    # Via liste
+    act1 = Action.from_dict({
+        "name": "Multi Key List",
+        "trigger": ["a", "b"],
+        "commands": []
+    })
+    assert "a" in act1.triggers
+    assert "b" in act1.triggers
+
+    # Via chaîne séparée par virgule
+    act2 = Action.from_dict({
+        "name": "Multi Key Comma",
+        "trigger": "x, y",
+        "commands": []
+    })
+    assert "x" in act2.triggers
+    assert "y" in act2.triggers
+
+
+def test_move_config_multi_key_directions():
+    """Vérifie le support de plusieurs touches pour une même direction de déplacement."""
+    from src.alfred.core.models import MoveConfig
+    cfg = MoveConfig.from_dict({
+        "move": {
+            "key_down": ["2", "down", "k"],
+            "key_up": "8, up",
+        }
+    })
+    assert "2" in cfg.keys_down
+    assert "num_2" in cfg.keys_down
+    assert "down" in cfg.keys_down
+    assert "k" in cfg.keys_down
+
+    assert "8" in cfg.keys_up
+    assert "num_8" in cfg.keys_up
+    assert "up" in cfg.keys_up
