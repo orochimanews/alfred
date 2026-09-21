@@ -21,7 +21,7 @@ active_modes = ["special"]
 # Les alias du pavé numérique sont automatiquement détectés.
 
 key_up = "8"              # Déplacement vers le haut (ex: Pavé numérique 8)
-key_down = "5"            # Déplacement vers le bas (ex: Pavé numérique 5)
+key_down = "5,2"            # Déplacement vers le bas (ex: Pavé numérique 5)
 key_left = "4"            # Déplacement vers la gauche (ex: Pavé numérique 4)
 key_right = "6"           # Déplacement vers la droite (ex: Pavé numérique 6)
 
@@ -52,6 +52,12 @@ acceleration_time = 1.2
 # Type de courbe d'accélération : "linear", "ease_in", "ease_out", "ease_in_out"
 curve = "ease_in_out"
 
+# Ratio horizontal/vertical pour les déplacements en diagonale
+# 1.0 = mouvement identique sur les deux axes (cercle parfait)
+# 2.0 = 2 pixels horizontaux pour 1 pixel vertical (adapté aux écrans larges 16:9)
+# Valeurs recommandées : entre 1.0 et 2.0 selon votre résolution et votre ressenti
+diagonal_ratio = 2.0
+
 # Intervalle de rafraîchissement en millisecondes (~16 ms = 60 FPS)
 update_interval_ms = 16
 
@@ -70,7 +76,7 @@ start_boosted = false     # État initial au démarrage de l'application
 # Si le curseur se trouve dans une zone touchant un ou deux bords (coins ou côtés),
 # presser cette touche plaque instantanément le curseur très proche du bord correspondant.
 edge_snap_enabled = true
-edge_snap_key = "e"                # Touche de rapprochement (ex: "e", "à", "0", "num_0")
+edge_snap_key = "0"                # Touche de rapprochement (ex: "e", "à", "0", "num_0")
 edge_offset = 40                   # Distance en pixels par rapport au bord (alias 'steps = 40')
 
 # ------------------------------------------------------------------------------

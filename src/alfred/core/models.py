@@ -469,6 +469,7 @@ class MoveConfig:
     acceleration_enabled: bool = True
     acceleration_time: float = 1.2
     curve: str = "ease_in_out"
+    diagonal_ratio: float = 1.0
     update_interval_ms: int = 16
 
     boost_enabled: bool = True
@@ -571,6 +572,7 @@ class MoveConfig:
         acceleration_enabled = bool(move_data.get("acceleration_enabled", True))
         acceleration_time = max(0.05, float(move_data.get("acceleration_time", 1.2)))
         curve = str(move_data.get("curve", "ease_in_out")).lower().strip()
+        diagonal_ratio = max(0.1, float(move_data.get("diagonal_ratio", 1.0)))
         update_interval_ms = max(5, int(move_data.get("update_interval_ms", 16)))
 
         boost_enabled = bool(move_data.get("boost_enabled", True))
@@ -661,6 +663,7 @@ class MoveConfig:
             acceleration_enabled=acceleration_enabled,
             acceleration_time=acceleration_time,
             curve=curve,
+            diagonal_ratio=diagonal_ratio,
             update_interval_ms=update_interval_ms,
             boost_enabled=boost_enabled,
             boost_toggle_key=boost_toggle_key,

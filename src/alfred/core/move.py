@@ -402,10 +402,16 @@ class MoveManager:
                         self._movement_event.clear()
                     break
 
-                # 2. Normalisation vectorielle (diagonales fluides)
-                length = math.hypot(vx, vy)
-                nx = vx / length
-                ny = vy / length
+                # 2. Ratio horizontal/vertical pour les diagonales (ajustement écrans larges)
+                # Le ratio s'applique uniquement quand les deux axes sont actifs simultanément.
+                ratio = cfg.diagonal_ratio if (vx != 0 and vy != 0) else 1.0
+                rx = vx * ratio
+                ry = vy
+
+                # Normalisation vectorielle (conserve une vitesse constante quelle que soit la direction)
+                length = math.hypot(rx, ry)
+                nx = rx / length
+                ny = ry / length
 
                 # 3. Calcul de la vitesse dynamique avec accélération
                 if cfg.acceleration_enabled and cfg.acceleration_time > 0:
