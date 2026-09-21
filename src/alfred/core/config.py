@@ -148,6 +148,7 @@ class ConfigManager:
                 font_size=int(ui_data.get("font_size", 13)),
                 always_on_top=bool(ui_data.get("always_on_top", True)),
                 start_minimized=bool(ui_data.get("start_minimized", True)),
+                show_screen_indicator=bool(ui_data.get("show_screen_indicator", True)),
             )
 
             self.app_config = AppConfig(general=general, modes=modes, mouse=mouse, ui=ui)
@@ -191,6 +192,7 @@ class ConfigManager:
                     "font_size": self.app_config.ui.font_size,
                     "always_on_top": self.app_config.ui.always_on_top,
                     "start_minimized": self.app_config.ui.start_minimized,
+                    "show_screen_indicator": self.app_config.ui.show_screen_indicator,
                 },
             }
             with open(self.config_path, "wb") as f:

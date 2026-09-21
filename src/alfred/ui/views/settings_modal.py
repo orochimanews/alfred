@@ -287,7 +287,7 @@ class SettingsModal(ctk.CTkToplevel):
 
         # Démarrer réduit dans la zone de notification (au lancement)
         row_min = ctk.CTkFrame(sec_ui, fg_color="transparent")
-        row_min.pack(fill="x", padx=12, pady=(4, 10))
+        row_min.pack(fill="x", padx=12, pady=4)
         self.chk_start_minimized = ctk.CTkCheckBox(
             row_min,
             text="Démarrer minimisé au lancement (dans la zone de notification)",
@@ -301,6 +301,22 @@ class SettingsModal(ctk.CTkToplevel):
             self.chk_start_minimized.deselect()
         self.chk_start_minimized.pack(anchor="w")
         self.switch_start_minimized = self.chk_start_minimized
+
+        # Voyant discret de mode en bas à droite de l'écran
+        row_ind = ctk.CTkFrame(sec_ui, fg_color="transparent")
+        row_ind.pack(fill="x", padx=12, pady=(4, 10))
+        self.chk_screen_indicator = ctk.CTkCheckBox(
+            row_ind,
+            text="Afficher le voyant d'écran discret (en bas à droite)",
+            font=self.theme_manager.get_font(size_offset=-1),
+            checkbox_width=20,
+            checkbox_height=20,
+        )
+        if getattr(cfg.ui, "show_screen_indicator", True):
+            self.chk_screen_indicator.select()
+        else:
+            self.chk_screen_indicator.deselect()
+        self.chk_screen_indicator.pack(anchor="w")
 
         # --- Boutons d'Action Inférieurs ---
         btn_bar = ctk.CTkFrame(container, fg_color="transparent")
@@ -368,6 +384,7 @@ class SettingsModal(ctk.CTkToplevel):
         new_font_size = int(self.slider_font.get())
         new_always_top = bool(self.switch_always_top.get())
         new_start_minimized = bool(self.switch_start_minimized.get())
+        new_show_indicator = bool(self.chk_screen_indicator.get())
 
         # Affectation
         cfg.general.special_mode_key = new_key
@@ -388,6 +405,7 @@ class SettingsModal(ctk.CTkToplevel):
         cfg.ui.font_size = new_font_size
         cfg.ui.always_on_top = new_always_top
         cfg.ui.start_minimized = new_start_minimized
+        cfg.ui.show_screen_indicator = new_show_indicator
 
         # Sauvegarde sur le disque
         self.config_manager.save_app_config()

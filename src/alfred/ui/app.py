@@ -11,6 +11,7 @@ from src.alfred.ui.views.dashboard import DashboardView
 from src.alfred.ui.views.actions_view import ActionsView
 from src.alfred.ui.views.grid_view import GridView
 from src.alfred.ui.views.settings_modal import SettingsModal
+from src.alfred.ui.indicator import ScreenIndicator
 
 if TYPE_CHECKING:
     from src.alfred.core.config import ConfigManager
@@ -108,6 +109,14 @@ class AlfredApp(ctk.CTk):
         )
         self.tray_service.start()
 
+        # Voyant d'écran discret (en bas à droite)
+        show_indicator = getattr(self.config_manager.app_config.ui, "show_screen_indicator", True)
+        self.screen_indicator = ScreenIndicator(
+            master=self,
+            initial_mode=self.state_manager.current_mode,
+            enabled=show_indicator,
+        )
+
         # Raccourci clavier dynamique de fermeture quand l'application a le focus
         self._close_bound_sequences: list[str] = []
         self._update_close_shortcut_binding()
@@ -180,6 +189,8 @@ class AlfredApp(ctk.CTk):
             self.hook_service.stop()
         if hasattr(self, "move_manager") and self.move_manager:
             self.move_manager.stop()
+        if hasattr(self, "screen_indicator") and self.screen_indicator:
+            self.screen_indicator.destroy()
         from src.alfred.core.mouse import mouse
         mouse.restore_initial_speed()
         self.destroy()
@@ -352,6 +363,7 @@ class AlfredApp(ctk.CTk):
                 self.theme_manager,
                 on_minimize=self.minimize_to_tray,
                 move_manager=self.move_manager,
+                on_toggle_screen_indicator=self.set_screen_indicator_enabled,
             ),
             "actions": ActionsView(
                 self.content_container,
@@ -414,10 +426,17 @@ class AlfredApp(ctk.CTk):
         """Reçoit les notifications d'état et planifie la mise à jour sur le thread UI Tkinter."""
         self.after(0, self._handle_state_event_in_ui, event_type, data)
 
+    def set_screen_indicator_enabled(self, enabled: bool) -> None:
+        """Active ou désactive l'affichage du voyant d'écran."""
+        if hasattr(self, "screen_indicator") and self.screen_indicator:
+            self.screen_indicator.set_enabled(enabled)
+
     def _handle_state_event_in_ui(self, event_type: str, data: any) -> None:
         match event_type:
             case "mode_changed":
                 self._update_header_mode_badge()
+                if hasattr(self, "screen_indicator") and self.screen_indicator:
+                    self.screen_indicator.update_mode(self.state_manager.current_mode)
                 if hasattr(self, "tray_service") and self.tray_service:
                     self.tray_service.update_mode(self.state_manager.current_mode)
                 dash = self.views.get("dashboard")
@@ -439,6 +458,11 @@ class AlfredApp(ctk.CTk):
         if hasattr(self, "move_manager") and self.move_manager:
             self.move_manager.update_config(self.config_manager.move_config)
         self._update_close_shortcut_binding()
+
+        if hasattr(self, "screen_indicator") and self.screen_indicator:
+            show_ind = getattr(self.config_manager.app_config.ui, "show_screen_indicator", True)
+            self.screen_indicator.set_enabled(show_ind)
+            self.screen_indicator.update_mode(self.state_manager.current_mode)
 
         # Rafraîchir les vues
         dash_view = self.views.get("dashboard")

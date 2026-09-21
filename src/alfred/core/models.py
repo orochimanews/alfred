@@ -726,6 +726,7 @@ class UIConfig:
     font_size: int = 13
     always_on_top: bool = True
     start_minimized: bool = True
+    show_screen_indicator: bool = True
 
 
 @dataclass

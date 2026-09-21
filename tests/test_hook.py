@@ -30,6 +30,7 @@ def test_hook_candidate_keys_exclamation(monkeypatch):
     """Vérifie que les touches '§' ou scan code 53 (AZERTY) sont reconnues comme '!'."""
     config_mgr = ConfigManager()
     config_mgr.load_all()
+    config_mgr.app_config.general.special_mode_key = ""
     state_mgr = StateManager(initial_mode="normal")
     grid_mgr = GridManager(config=config_mgr.grid_config, state_manager=state_mgr)
     commands_engine = CommandsEngine(state_manager=state_mgr, grid_manager=grid_mgr, config_manager=config_mgr)

@@ -5,6 +5,7 @@ start_in_special_mode = true
 auto_exit_on_text_input = true
 auto_return_on_enter = true
 close = "ctrl+w"
+special_mode_key = "!"
 
 [modes.normal]
 name = "Normal"
@@ -24,7 +25,7 @@ description = "Mode sous-grille (division 3x3 de la case courante pour un ciblag
 
 [mouse]
 use_system_speed = true
-default_speed = 10
+default_speed = 9
 
 [ui]
 theme = "dark"
@@ -32,3 +33,4 @@ color_theme = "blue"
 font_size = 13
 always_on_top = false
 start_minimized = false
+show_screen_indicator = true

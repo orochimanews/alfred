@@ -24,6 +24,7 @@ class DashboardView(ctk.CTkFrame):
         theme_manager: ThemeManager,
         on_minimize: Callable[[], None] | None = None,
         move_manager: MoveManager | None = None,
+        on_toggle_screen_indicator: Callable[[bool], None] | None = None,
         **kwargs
     ) -> None:
         super().__init__(master, **kwargs)
@@ -32,6 +33,7 @@ class DashboardView(ctk.CTkFrame):
         self.theme_manager = theme_manager
         self.on_minimize = on_minimize
         self.move_manager = move_manager
+        self.on_toggle_screen_indicator = on_toggle_screen_indicator
 
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=1)
@@ -81,6 +83,21 @@ class DashboardView(ctk.CTkFrame):
             self.chk_start_in_special_mode.deselect()
         self.chk_start_in_special_mode.pack(anchor="w", pady=(3, 0))
         ToolTip(self.chk_start_in_special_mode, "Démarrer automatiquement Alfred en mode spécial au lancement")
+
+        self.chk_screen_indicator = ctk.CTkCheckBox(
+            mode_box,
+            text="Voyant d'écran",
+            font=self.theme_manager.get_font(size_offset=-2),
+            checkbox_width=16,
+            checkbox_height=16,
+            command=self._on_toggle_screen_indicator,
+        )
+        if getattr(self.config_manager.app_config.ui, "show_screen_indicator", True):
+            self.chk_screen_indicator.select()
+        else:
+            self.chk_screen_indicator.deselect()
+        self.chk_screen_indicator.pack(anchor="w", pady=(2, 0))
+        ToolTip(self.chk_screen_indicator, "Afficher un voyant discret en bas à droite de l'écran (Bleu: Normal, Rouge: Spécial)")
 
         # Bloc droit sur la ligne de Mode : Raccourci de bascule et Bouton Minimiser
         right_panel = ctk.CTkFrame(card, fg_color="transparent")
@@ -299,6 +316,15 @@ class DashboardView(ctk.CTkFrame):
             self.config_manager.app_config.general.default_mode = "special" if is_checked else "normal"
             self.config_manager.save_app_config()
 
+    def _on_toggle_screen_indicator(self) -> None:
+        """Met à jour l'option show_screen_indicator depuis le tableau de bord et sauvegarde dans config.toml."""
+        if hasattr(self, "chk_screen_indicator"):
+            is_checked = bool(self.chk_screen_indicator.get())
+            self.config_manager.app_config.ui.show_screen_indicator = is_checked
+            self.config_manager.save_app_config()
+            if self.on_toggle_screen_indicator:
+                self.on_toggle_screen_indicator(is_checked)
+
     def _update_boost_badge(self) -> None:
         """Met à jour l'apparence du bouton boost."""
         if not hasattr(self, "btn_boost_badge") or self.btn_boost_badge is None:
@@ -339,6 +365,11 @@ class DashboardView(ctk.CTkFrame):
                 self.chk_start_in_special_mode.select()
             else:
                 self.chk_start_in_special_mode.deselect()
+        if hasattr(self, "chk_screen_indicator"):
+            if getattr(self.config_manager.app_config.ui, "show_screen_indicator", True):
+                self.chk_screen_indicator.select()
+            else:
+                self.chk_screen_indicator.deselect()
 
     def refresh_logs(self) -> None:
         """Recharge la liste visuelle des logs."""
