@@ -12,7 +12,6 @@ uv run pyinstaller --noconfirm --onedir --windowed ^
     --name "Alfred" ^
     --icon "assets\icon.ico" ^
     --noupx ^
-    --distpath "dist_new" ^
     --collect-all customtkinter ^
     --collect-all pystray ^
     --collect-all PIL ^
@@ -26,12 +25,12 @@ if errorlevel 1 (
     exit /b %errorlevel%
 )
 
-echo [3/3] Copie des dossiers settings et assets dans dist_new/Alfred/...
-if not exist "dist_new\Alfred\settings" mkdir "dist_new\Alfred\settings"
-xcopy /E /I /Y "settings" "dist_new\Alfred\settings"
-if not exist "dist_new\Alfred\assets" mkdir "dist_new\Alfred\assets"
-xcopy /E /I /Y "assets" "dist_new\Alfred\assets"
+echo [3/3] Copie des dossiers settings et assets dans dist/Alfred/...
+if not exist "dist\Alfred\settings" mkdir "dist\Alfred\settings"
+xcopy /E /I /Y "settings" "dist\Alfred\settings"
+if not exist "dist\Alfred\assets" mkdir "dist\Alfred\assets"
+xcopy /E /I /Y "assets" "dist\Alfred\assets"
 
 echo ===================================================
-echo [SUCCES] L'executable autonome est pret dans dist_new\Alfred\Alfred.exe
+echo [SUCCES] L'executable autonome est pret dans dist\Alfred\Alfred.exe
 echo ===================================================
