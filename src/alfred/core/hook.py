@@ -18,13 +18,73 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+def _setup_hook_thread_win32() -> None:
+    """Optimise le thread d'écoute du hook pour garantir sa réactivité même sans fenêtre visible.
+
+    Dans un build PyInstaller --windowed, quand toutes les fenêtres Tkinter sont cachées
+    (withdraw/tray), Windows 11 peut throttler le thread du hook via EcoQoS/Power Throttling,
+    stoppant silencieusement la livraison des callbacks WH_KEYBOARD_LL.
+
+    Trois couches de protection :
+    1. Priorité thread HIGHEST  → le thread n'est pas mis en attente par le scheduler
+    2. SetThreadInformation     → désactive le Power Throttling pour ce thread précis
+    3. AvSetMmThreadCharacteristicsW("Pro Audio") → marque le thread comme temps-réel
+       (même mécanisme que les DAW audio, garantit 0 throttling par Windows)
+    """
+    if sys.platform != "win32":
+        return
+    try:
+        import ctypes
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        h_thread = kernel32.GetCurrentThread()
+
+        # 1. Priorité maximale du thread scheduler
+        THREAD_PRIORITY_HIGHEST = 2
+        kernel32.SetThreadPriority(h_thread, THREAD_PRIORITY_HIGHEST)
+
+        # 2. Désactiver le Power Throttling (EcoQoS) pour ce thread individuel
+        try:
+            class THREAD_POWER_THROTTLING_STATE(ctypes.Structure):
+                _fields_ = [
+                    ("Version",     ctypes.c_uint32),
+                    ("ControlMask", ctypes.c_uint32),
+                    ("StateMask",   ctypes.c_uint32),
+                ]
+            state = THREAD_POWER_THROTTLING_STATE()
+            state.Version = 1
+            state.ControlMask = 0x1  # THREAD_POWER_THROTTLING_EXECUTION_SPEED
+            state.StateMask = 0       # 0 = désactiver le throttling
+            kernel32.SetThreadInformation(
+                h_thread,
+                49,  # ThreadPowerThrottlingState
+                ctypes.byref(state),
+                ctypes.sizeof(state),
+            )
+        except Exception:
+            pass
+
+        # 3. Marquer le thread comme "Pro Audio" via AVRT → priorité temps-réel garantie
+        # Même mécanisme que les DAW (Ableton, Pro Tools) pour éviter tout lag système
+        try:
+            avrt = ctypes.WinDLL("avrt.dll")
+            task_index = ctypes.c_ulong(0)
+            avrt.AvSetMmThreadCharacteristicsW("Pro Audio", ctypes.byref(task_index))
+        except Exception:
+            pass
+
+        logger.debug("Thread hook clavier optimisé : priorité HIGHEST, EcoQoS off, AVRT Pro Audio.")
+    except Exception as err:
+        logger.debug("Impossible d'optimiser le thread du hook : %s", err)
+
+
 def _patch_keyboard_windows_listen() -> None:
     """Corrige le bug critique de pointeur NULL dans keyboard._winkeyboard.listen sous Windows.
 
     Par défaut, keyboard._winkeyboard fait 'msg = LPMSG()', ce qui passe un pointeur NULL
     à GetMessage(). Dès qu'un message système arrive dans la file du thread, une violation
     d'accès (Access Violation 0x00000008) survient et tue le thread d'écoute en silence.
-    Ce patch alloue une structure MSG() valide et implémente la vraie boucle Win32.
+    Ce patch alloue une structure MSG() valide, implémente la vraie boucle Win32,
+    et optimise le thread pour qu'il reste actif même quand toutes les fenêtres sont cachées.
     """
     if sys.platform != "win32":
         return
@@ -35,6 +95,10 @@ def _patch_keyboard_windows_listen() -> None:
         from ctypes.wintypes import MSG
 
         def safe_listen(callback):
+            # Optimiser ce thread immédiatement : priorité haute, EcoQoS désactivé, AVRT.
+            # Critique pour le build PyInstaller --windowed : sans fenêtre visible,
+            # Windows throttle le thread du hook et les callbacks WH_KEYBOARD_LL ne sont plus livrés.
+            _setup_hook_thread_win32()
             _winkeyboard.prepare_intercept(callback)
             msg = MSG()
             p_msg = ctypes.byref(msg)

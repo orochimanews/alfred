@@ -119,6 +119,15 @@ def configure_windows_process() -> None:
         except Exception:
             pass
 
+        # 4. Résolution timer à 1 ms via winmm.timeBeginPeriod
+        # Sans ça, Windows peut coarsener le scheduler à ~15 ms en arrière-plan,
+        # retardant ou bloquant la livraison des messages Win32 au thread du hook clavier.
+        try:
+            winmm = ctypes.WinDLL("winmm")
+            winmm.timeBeginPeriod(1)
+        except Exception:
+            pass
+
         logger.info("Configuration système Windows appliquée (Haute priorité & EcoQoS prévenu).")
     except Exception as err:
         logger.debug("Impossible d'appliquer certaines optimisations système Windows : %s", err)
