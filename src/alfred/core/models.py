@@ -705,7 +705,6 @@ class GeneralConfig:
     app_name: str = "Alfred"
     default_mode: str = "special"
     start_in_special_mode: bool = True
-    close: str = "ctrl+w"
     quit: str = "ctrl+shift+q"
     special_mode_key: str = ""
     special_mode_name: str = "special"

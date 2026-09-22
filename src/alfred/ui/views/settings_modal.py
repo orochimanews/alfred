@@ -32,13 +32,8 @@ class SettingsModal(ctk.CTkToplevel):
         self.transient(parent)
         self.grab_set()
 
-        # Fermeture avec Échap ou le raccourci de fermeture configuré s'il existe
+        # Fermeture avec Échap
         self.bind("<Escape>", lambda e: self.destroy())
-        close_key = getattr(self.config_manager.app_config.general, "close", "").strip()
-        if close_key:
-            from src.alfred.ui.app import parse_shortcut_to_tk
-            for seq in parse_shortcut_to_tk(close_key):
-                self.bind(seq, lambda e: self.destroy())
 
         self._build_ui()
 
@@ -142,23 +137,6 @@ class SettingsModal(ctk.CTkToplevel):
         if not getattr(cfg.general, "auto_exit_on_text_input", True):
             self.chk_auto_return_on_enter.configure(state="disabled")
         self.chk_auto_return_on_enter.pack(side="left")
-
-        # Raccourci de fermeture (Focus)
-        row_close = ctk.CTkFrame(sec_mode, fg_color="transparent")
-        row_close.pack(fill="x", padx=12, pady=4)
-        ctk.CTkLabel(
-            row_close,
-            text="Fermer Alfred (Focus) :",
-            font=self.theme_manager.get_font(size_offset=-1)
-        ).pack(side="left")
-        self.entry_close_shortcut = ctk.CTkEntry(
-            row_close,
-            width=120,
-            font=self.theme_manager.get_font(size_offset=-1),
-            placeholder_text="ex: ctrl+w"
-        )
-        self.entry_close_shortcut.insert(0, getattr(cfg.general, "close", ""))
-        self.entry_close_shortcut.pack(side="right")
 
         # Raccourci global pour quitter même non sélectionné
         row_quit = ctk.CTkFrame(sec_mode, fg_color="transparent")
@@ -424,7 +402,6 @@ class SettingsModal(ctk.CTkToplevel):
         new_start_special = bool(self.chk_start_in_special_mode.get())
         new_auto_exit = bool(self.chk_auto_exit_on_text.get())
         new_default_mode = "special" if new_start_special else "normal"
-        new_close = self.entry_close_shortcut.get().strip()
         new_quit = self.entry_quit_shortcut.get().strip()
         new_use_sys_speed = bool(self.switch_use_sys_speed.get())
         new_def_speed = int(self.slider_def_speed.get())
@@ -450,7 +427,6 @@ class SettingsModal(ctk.CTkToplevel):
         cfg.general.auto_exit_on_text_input = new_auto_exit
         cfg.general.auto_return_on_enter = bool(self.chk_auto_return_on_enter.get())
         cfg.general.default_mode = new_default_mode
-        cfg.general.close = new_close
         cfg.general.quit = new_quit
         for act in self.config_manager.actions:
             if act.toggle and (

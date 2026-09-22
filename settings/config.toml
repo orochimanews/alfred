@@ -4,8 +4,8 @@ default_mode = "special"
 start_in_special_mode = true
 auto_exit_on_text_input = false
 auto_return_on_enter = false
-close = "ctrl+w"
 quit = "²"
+
 
 [modes.normal]
 name = "Normal"

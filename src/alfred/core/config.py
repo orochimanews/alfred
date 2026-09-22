@@ -78,10 +78,6 @@ class ConfigManager:
                 data = tomllib.load(f)
 
             gen_data = data.get("general", {})
-            raw_close = gen_data.get("close")
-            if raw_close is None:
-                raw_close = gen_data.get("close_shortcut", "ctrl+w")
-            close_shortcut = str(raw_close).strip() if raw_close is not None else "ctrl+w"
 
             raw_quit = gen_data.get("quit")
             if raw_quit is None:
@@ -111,7 +107,6 @@ class ConfigManager:
                 app_name=gen_data.get("app_name", "Alfred"),
                 default_mode=default_mode,
                 start_in_special_mode=start_in_special,
-                close=close_shortcut,
                 quit=quit_shortcut,
                 special_mode_key=gen_data.get("special_mode_key", ""),
                 special_mode_name=gen_data.get("special_mode_name", "special"),
@@ -185,7 +180,6 @@ class ConfigManager:
                 "start_in_special_mode": self.app_config.general.start_in_special_mode,
                 "auto_exit_on_text_input": self.app_config.general.auto_exit_on_text_input,
                 "auto_return_on_enter": self.app_config.general.auto_return_on_enter,
-                "close": self.app_config.general.close,
                 "quit": self.app_config.general.quit,
             }
             if self.app_config.general.special_mode_key:

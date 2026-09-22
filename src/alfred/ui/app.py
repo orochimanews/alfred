@@ -127,10 +127,6 @@ class AlfredApp(ctk.CTk):
             size=getattr(ui_cfg, "screen_indicator_size", 20),
         )
 
-        # Raccourci clavier dynamique de fermeture quand l'application a le focus
-        self._close_bound_sequences: list[str] = []
-        self._update_close_shortcut_binding()
-
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=1)
 
@@ -156,25 +152,6 @@ class AlfredApp(ctk.CTk):
         except Exception:
             pass
 
-    def _update_close_shortcut_binding(self) -> None:
-        """Met à jour les raccourcis clavier de fermeture selon config.toml [general].close."""
-        for seq in getattr(self, "_close_bound_sequences", []):
-            try:
-                self.unbind(seq)
-            except Exception:
-                pass
-        self._close_bound_sequences = []
-
-        close_shortcut = getattr(self.config_manager.app_config.general, "close", "").strip()
-        if not close_shortcut:
-            logger.info("Aucun raccourci de fermeture configuré (close est vide).")
-            return
-
-        sequences = parse_shortcut_to_tk(close_shortcut)
-        for seq in sequences:
-            self.bind(seq, self.close)
-            self._close_bound_sequences.append(seq)
-        logger.debug("Raccourci de fermeture '%s' activé sur %s", close_shortcut, sequences)
 
     def minimize_to_tray(self) -> None:
         """Réduit la fenêtre dans la zone de notification Windows (systray)."""
@@ -478,7 +455,6 @@ class AlfredApp(ctk.CTk):
         self.grid_manager.update_config(self.config_manager.grid_config)
         if hasattr(self, "move_manager") and self.move_manager:
             self.move_manager.update_config(self.config_manager.move_config)
-        self._update_close_shortcut_binding()
 
         if hasattr(self, "screen_indicator") and self.screen_indicator:
             ui_cfg = self.config_manager.app_config.ui
