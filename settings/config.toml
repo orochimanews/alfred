@@ -3,7 +3,6 @@ app_name = "Alfred"
 default_mode = "special"
 auto_exit_on_text_input = false
 auto_return_on_enter = false
-quit = "²"
 
 
 [modes.normal]

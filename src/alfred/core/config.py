@@ -79,19 +79,6 @@ class ConfigManager:
 
             gen_data = data.get("general", {})
 
-            raw_quit = gen_data.get("quit")
-            if raw_quit is None:
-                raw_quit = gen_data.get("quit_key")
-            if raw_quit is None:
-                raw_quit = gen_data.get("quit_shortcut")
-            if raw_quit is None:
-                raw_quit = gen_data.get("exit_shortcut")
-            if raw_quit is None:
-                raw_quit = gen_data.get("exit_key")
-            if raw_quit is None:
-                raw_quit = gen_data.get("exit")
-            quit_shortcut = str(raw_quit).strip() if raw_quit is not None else "ctrl+shift+q"
-
             raw_start_special = gen_data.get("start_in_special_mode")
             if raw_start_special is not None:
                 start_in_special = bool(raw_start_special)
@@ -107,7 +94,6 @@ class ConfigManager:
                 app_name=gen_data.get("app_name", "Alfred"),
                 default_mode=default_mode,
                 start_in_special_mode=start_in_special,
-                quit=quit_shortcut,
                 special_mode_key=gen_data.get("special_mode_key", ""),
                 special_mode_name=gen_data.get("special_mode_name", "special"),
                 toggle_special_mode=bool(gen_data.get("toggle_special_mode", True)),
@@ -180,7 +166,6 @@ class ConfigManager:
                 "start_in_special_mode": self.app_config.general.start_in_special_mode,
                 "auto_exit_on_text_input": self.app_config.general.auto_exit_on_text_input,
                 "auto_return_on_enter": self.app_config.general.auto_return_on_enter,
-                "quit": self.app_config.general.quit,
             }
             if self.app_config.general.special_mode_key:
                 gen_dict["special_mode_key"] = self.app_config.general.special_mode_key

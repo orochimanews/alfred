@@ -99,24 +99,18 @@ def test_alfred_app_minimize_and_restore_tray():
             assert modal.chk_start_minimized.get() == 1
             assert hasattr(modal, "chk_start_in_special_mode")
             assert modal.chk_start_in_special_mode.get() == 1
-            assert hasattr(modal, "entry_quit_shortcut")
-            assert modal.entry_quit_shortcut.get() == config_mgr.app_config.general.quit
 
             with patch.object(config_mgr, "save_app_config"):
                 modal.chk_start_minimized.deselect()
                 modal.chk_start_in_special_mode.deselect()
-                modal.entry_quit_shortcut.delete(0, "end")
-                modal.entry_quit_shortcut.insert(0, "ctrl+alt+q")
                 modal._save_changes()
                 assert config_mgr.app_config.ui.start_minimized is False
                 assert config_mgr.app_config.general.start_in_special_mode is False
                 assert config_mgr.app_config.general.default_mode == "normal"
-                assert config_mgr.app_config.general.quit == "ctrl+alt+q"
                 # Restaurer pour la fin du test
                 config_mgr.app_config.ui.start_minimized = True
                 config_mgr.app_config.general.start_in_special_mode = True
                 config_mgr.app_config.general.default_mode = "special"
-                config_mgr.app_config.general.quit = "ctrl+shift+q"
         finally:
             try:
                 app.close()

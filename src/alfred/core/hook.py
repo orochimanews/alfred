@@ -264,28 +264,6 @@ class KeyboardHookService:
             for k in candidate_keys:
                 self._pressed_keys.add(k)
 
-            # 0. Vérification prioritaire du raccourci global pour QUITTER Alfred
-            # Fonctionne toujours, même en arrière-plan / non sélectionné et quel que soit le mode actif
-            gen_cfg = self.config_manager.app_config.general
-            quit_shortcut = getattr(gen_cfg, "quit", "").strip()
-            if quit_shortcut and not is_repeat:
-                if match_shortcut(quit_shortcut, candidate_keys, self._pressed_keys):
-                    logger.info("Raccourci global de fermeture '%s' détecté.", quit_shortcut)
-                    self.state_manager.add_log(
-                        action_name="Quitter Alfred (Raccourci Global)",
-                        trigger_key=key_name,
-                        mode=self.state_manager.current_mode,
-                        status="success",
-                        details=f"Raccourci : {quit_shortcut}",
-                    )
-                    threading.Thread(
-                        target=self._trigger_quit,
-                        daemon=True,
-                        name="Alfred-GlobalQuitThread",
-                    ).start()
-                    # Supprimer la frappe pour éviter qu'elle soit envoyée à l'application active
-                    return False
-
             # Si le service est désactivé via le state manager, ne rien intercepter
             if not self.state_manager.is_hook_enabled:
                 return True

@@ -138,22 +138,6 @@ class SettingsModal(ctk.CTkToplevel):
             self.chk_auto_return_on_enter.configure(state="disabled")
         self.chk_auto_return_on_enter.pack(side="left")
 
-        # Raccourci global pour quitter même non sélectionné
-        row_quit = ctk.CTkFrame(sec_mode, fg_color="transparent")
-        row_quit.pack(fill="x", padx=12, pady=(4, 10))
-        ctk.CTkLabel(
-            row_quit,
-            text="Quitter Alfred (Global) :",
-            font=self.theme_manager.get_font(size_offset=-1)
-        ).pack(side="left")
-        self.entry_quit_shortcut = ctk.CTkEntry(
-            row_quit,
-            width=120,
-            font=self.theme_manager.get_font(size_offset=-1),
-            placeholder_text="ex: ctrl+shift+q"
-        )
-        self.entry_quit_shortcut.insert(0, getattr(cfg.general, "quit", ""))
-        self.entry_quit_shortcut.pack(side="right")
 
         # --- Section 2: Vitesse Normale du Curseur ---
         sec_mouse = ctk.CTkFrame(container, corner_radius=6)
@@ -402,7 +386,6 @@ class SettingsModal(ctk.CTkToplevel):
         new_start_special = bool(self.chk_start_in_special_mode.get())
         new_auto_exit = bool(self.chk_auto_exit_on_text.get())
         new_default_mode = "special" if new_start_special else "normal"
-        new_quit = self.entry_quit_shortcut.get().strip()
         new_use_sys_speed = bool(self.switch_use_sys_speed.get())
         new_def_speed = int(self.slider_def_speed.get())
 
@@ -427,7 +410,6 @@ class SettingsModal(ctk.CTkToplevel):
         cfg.general.auto_exit_on_text_input = new_auto_exit
         cfg.general.auto_return_on_enter = bool(self.chk_auto_return_on_enter.get())
         cfg.general.default_mode = new_default_mode
-        cfg.general.quit = new_quit
         for act in self.config_manager.actions:
             if act.toggle and (
                 any(any(c.type == "mode" for c in s.commands) for s in act.states)
