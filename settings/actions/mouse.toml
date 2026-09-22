@@ -2,7 +2,7 @@
 name = "Clic Gauche"
 description = "Simule un clic du bouton gauche"
 modes = ["special"]
-trigger = ";"
+trigger = "d"
 commands = [
     { type = "click", params = ["left"] }
 ]
@@ -11,25 +11,34 @@ commands = [
 name = "Clic Milieu"
 description = "Simule un clic molette (bouton du milieu)"
 modes = ["special"]
-trigger = ":"
+trigger = "f"
 commands = [
     { type = "middle_click" }
 ]
 
 [[actions]]
-name = "Vitesse Souris / Trackpad"
-description = "Bascule la vitesse du pointeur entre rapide (18) et normale (10)"
+name = "Clic Droit"
+description = "decimal"
 modes = ["special"]
-trigger = "s"
+trigger = "g"
 commands = [
-    { type = "mouse_speed", speed = 100, toggle = true }
+       { type = "click", button = "right" }
+]
+
+[[actions]]
+name = "Double-Clic"
+description = "Simule un double-clic du bouton gauche"
+modes = ["special"]
+trigger = "decimal"
+commands = [
+    { type = "click", button = "left", clicks = 2 }
 ]
 
 [[actions]]
 name = "Drag & Drop"
 description = "Bascule le maintien et le relâchement du clic gauche (glisser-déposer)"
 modes = ["special"]
-trigger = ","
+trigger = ";"
 toggle = true
 states = [
     { name = "Maintien Clic (Drag)", commands = [{ type = "mouse_down", button = "left" }] },
@@ -37,30 +46,21 @@ states = [
 ]
 
 [[actions]]
-name = "Molette Haut (Scroll Up)"
-description = "Défilement vertical vers le haut"
+name = "Vitesse Souris / Trackpad"
+description = "Bascule la vitesse du pointeur entre rapide (18) et normale (10)"
 modes = ["special"]
-trigger = "y"
+trigger = ""
 commands = [
-    { type = "scroll", delta = 3 }
-]
-
-[[actions]]
-name = "Molette Bas (Scroll Down)"
-description = "Défilement vertical vers le bas"
-modes = ["special"]
-trigger = "u"
-commands = [
-    { type = "scroll", delta = -3 }
+    { type = "mouse_speed", speed = 100, toggle = true }
 ]
 
 [[actions]]
 name = "Mode Nudge Souris / Trackpad"
 description = "Bascule le mode Nudge : les mouvements de souris/trackpad avancent par bonds directionnels rapides"
 modes = ["special"]
-trigger = "d"
+trigger = ""
 commands = [
-    { type = "mouse_nudge", step = 150, toggle = true }
+    { type = "mouse_nudge", step = 400, toggle = true }
 ]
 
 

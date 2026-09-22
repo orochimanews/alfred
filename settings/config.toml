@@ -2,11 +2,10 @@
 app_name = "Alfred"
 default_mode = "special"
 start_in_special_mode = true
-auto_exit_on_text_input = true
-auto_return_on_enter = true
+auto_exit_on_text_input = false
+auto_return_on_enter = false
 close = "ctrl+w"
 quit = "²"
-special_mode_key = "!"
 
 [modes.normal]
 name = "Normal"
@@ -35,6 +34,6 @@ font_size = 13
 always_on_top = false
 start_minimized = false
 show_screen_indicator = true
-screen_indicator_offset_x = 12
-screen_indicator_offset_y = 12
+screen_indicator_offset_x = 60
+screen_indicator_offset_y = 80
 screen_indicator_size = 20

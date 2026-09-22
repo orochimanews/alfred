@@ -6,75 +6,21 @@
 # une structure claire et compacte.
 
 [[actions]]
-name = "Nouvel Onglet Navigateur"
-description = "Ouvre un nouvel onglet avec Ctrl+T"
-modes = ["special"]
-trigger = "t"
-commands = [
-    { type = "hotkey", params = ["ctrl", "t"] }
-]
-
-[[actions]]
-name = "fermer"
-description = ""
-modes = ["special"]
-trigger = "w"
-commands = [
-    { type = "hotkey", params = ["ctrl", "w"] }
-]
-
-[[actions]]
-name = "liste"
-description = ""
-modes = ["special"]
-trigger = "b"
-commands = [
-    { type = "hotkey", params = ["win", "tab"] }
-]
-
-[[actions]]
-name = "programme suivant"
-description = ""
-modes = ["special"]
-trigger = "n"
-commands = [
-    { type = "hotkey", params = ["alt", "escape"] }
-]
-
-[[actions]]
-name = "onglet suivant"
-description = ""
-modes = ["special"]
-trigger = "<"
-commands = [
-    { type = "hotkey", params = ["ctrl", "tab"] }
-]
-
-[[actions]]
-name = "précédent navigateur"
-description = ""
-modes = ["special"]
-trigger = "z"
-commands = [
-    { type = "hotkey", params = ["alt", "left"] }
-]
-
-[[actions]]
-name = "focus adresse"
-description = ""
-modes = ["special"]
-trigger = "k"
-commands = [
-    { type = "hotkey", params = ["ctrl", "k"] }
-]
-
-[[actions]]
 name = "select all"
 description = ""
 modes = ["special"]
 trigger = "a"
 commands = [
     { type = "hotkey", params = ["ctrl", "a"] }
+]
+
+[[actions]]
+name = "annuler"
+description = ""
+modes = ["special"]
+trigger = "z"
+commands = [
+    { type = "hotkey", params = ["ctrl", "z"] }
 ]
 
 [[actions]]
@@ -104,22 +50,42 @@ commands = [
     { type = "hotkey", params = ["ctrl", "v"] }
 ]
 
-
 [[actions]]
-name = "vocal d'antigravity"
+name = "minimize"
 description = ""
 modes = ["special"]
-trigger = "m"
+trigger = ""
 commands = [
-    { type = "hotkey", params = ["ctrl", "m"] }
+    { type = "hotkey", params = ["win", "down"] }
 ]
 
 [[actions]]
-name = "vocal d'openai"
+name = "maximize"
+description = ""
 modes = ["special"]
-trigger = "d"
+trigger = "!"
 commands = [
-    { type = "hotkey", params = ["ctrl", "shift", "d"] }
+    { type = "hotkey", params = ["win", "up"] }
 ]
+
+[[actions]]
+name = "presse papiers"
+description = ""
+modes = ["special"]
+trigger = ":"
+commands = [
+    { type = "hotkey", params = ["win", "v"] }
+]
+
+[[actions]]
+name = "renommer"
+description = "Renommer l'élément sélectionné"
+modes = ["special"]
+trigger = "j"
+commands = [
+    { type = "hotkey", params = ["f2"] }
+]
+
+
 
 

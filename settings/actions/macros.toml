@@ -1,0 +1,25 @@
+# ==============================================================================
+# ACTIONS MACROS (settings/actions/macros.toml)
+# ==============================================================================
+# Ce fichier regroupe les macros multi-commandes d'Alfred.
+# Chaque action définit un tableau 'commands = [ ... ]' contenant ses commandes.
+# Vous pouvez ajouter d'autres macros à la suite sous forme de blocs [[actions]].
+
+[[actions]]
+name = "Terminal Bun Dev"
+description = "Ouvre le terminal dans le dossier courant de l'Explorateur et lance 'bun dev'"
+modes = ["special"]
+trigger = "/"
+commands = [
+    { type = "hotkey", params = ["alt", "d"] },
+    { type = "sleep", params = [0.15] },
+    { type = "text", params = ["cmd"] },
+    { type = "hotkey", params = ["enter"] },
+    { type = "sleep", params = [0.8] },
+    { type = "text", params = ["bun dev"] },
+    { type = "hotkey", params = ["enter"] }
+]
+
+
+
+

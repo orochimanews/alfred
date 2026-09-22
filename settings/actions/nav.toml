@@ -1,0 +1,98 @@
+[[actions]]
+name = "Nouvel Onglet"
+description = "Ouvre un nouvel onglet avec Ctrl+T"
+modes = ["special"]
+trigger = "t"
+commands = [
+    { type = "hotkey", params = ["ctrl", "t"] }
+]
+
+[[actions]]
+name = "fermer"
+description = ""
+modes = ["special"]
+trigger = "w"
+commands = [
+    { type = "hotkey", params = ["ctrl", "w"] }
+]
+
+[[actions]]
+name = "liste"
+description = ""
+modes = ["special"]
+trigger = "b"
+commands = [
+    { type = "hotkey", params = ["win", "tab"] }
+]
+
+[[actions]]
+name = "programme suivant"
+description = ""
+modes = ["special"]
+trigger = "n"
+commands = [
+    { type = "hotkey", params = ["alt", "escape"] }
+]
+
+[[actions]]
+name = "onglet suivant"
+description = ""
+modes = ["special"]
+trigger = "<"
+commands = [
+    { type = "hotkey", params = ["ctrl", "tab"] }
+]
+
+[[actions]]
+name = "onglet precedent"
+description = ""
+modes = ["special"]
+trigger = ">"
+commands = [
+    { type = "hotkey", params = ["ctrl", "shift", "tab"] }
+]
+
+[[actions]]
+name = "précédent navigateur"
+description = ""
+modes = ["special"]
+trigger = "r"
+commands = [
+    { type = "hotkey", params = ["alt", "left"] }
+]
+
+[[actions]]
+name = "focus adresse"
+description = ""
+modes = ["special"]
+trigger = "k"
+commands = [
+    { type = "hotkey", params = ["ctrl", "l"] }
+]
+
+[[actions]]
+name = "refresh"
+description = ""
+modes = ["special"]
+trigger = "R"
+commands = [
+    { type = "hotkey", params = ["ctrl", "r"] }
+]
+
+[[actions]]
+name = "chercher onglet"
+description = ""
+modes = ["special"]
+trigger = "e"
+commands = [
+    { type = "hotkey", params = ["ctrl", "shift", "a"] }
+]
+
+[[actions]]
+name = "gestionnaire favoris"
+description = ""
+modes = ["special"]
+trigger = "h"
+commands = [
+    { type = "hotkey", params = ["ctrl", "shift", "o"] }
+]

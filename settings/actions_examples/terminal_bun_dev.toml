@@ -1,0 +1,51 @@
+# ==============================================================================
+# Action Exemple : Lancer le terminal dans le dossier courant et exécuter "bun dev"
+# ==============================================================================
+# Fonctionnement (dans l'Explorateur de fichiers Windows) :
+# 1. Alt + D : sélectionne la barre d'adresse de l'Explorateur.
+# 2. Saisie de "wt" (Windows Terminal), "powershell" ou "cmd" puis Entrée :
+#    Windows lance le terminal avec comme dossier de travail le dossier en cours !
+# 3. Pause (sleep) : laisse le temps au terminal d'apparaître et de prendre le focus.
+# 4. Saisie de "bun dev" puis Entrée : lance la commande de développement.
+#
+# Note : Pour l'activer, vous pouvez copier cette action dans settings/actions/
+# ou nous demander de l'y ajouter avec la touche de votre choix (ex: trigger = "b").
+
+name = "Terminal Bun Dev"
+description = "Ouvre le terminal dans le dossier courant de l'Explorateur et exécute 'bun dev'"
+
+modes = ["special"]
+trigger = "b"
+
+# 1. Focus sur la barre d'adresse de l'Explorateur de fichiers
+[[commands]]
+type = "hotkey"
+keys = ["alt", "d"]
+
+# 2. Légère pause pour s'assurer que la barre d'adresse est active
+[[commands]]
+type = "sleep"
+duration = 0.15
+
+# 3. Lancer le terminal (remplacer par "powershell" ou "cmd" si vous n'utilisez pas Windows Terminal)
+[[commands]]
+type = "text"
+content = "wt"
+
+[[commands]]
+type = "hotkey"
+keys = ["enter"]
+
+# 4. Pause pour laisser le terminal s'ouvrir et prendre le focus
+[[commands]]
+type = "sleep"
+duration = 0.8
+
+# 5. Écrire la commande et la valider
+[[commands]]
+type = "text"
+content = "bun dev"
+
+[[commands]]
+type = "hotkey"
+keys = ["enter"]

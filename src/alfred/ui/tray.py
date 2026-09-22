@@ -7,32 +7,63 @@ from typing import Callable, Optional
 from PIL import Image, ImageDraw
 import pystray
 
+from src.alfred.core.assets import get_icon_png_path
+
 logger = logging.getLogger(__name__)
 
 
 def create_tray_icon_image(mode: str = "normal", size: tuple[int, int] = (64, 64)) -> Image.Image:
-    """Génère dynamiquement une icône pour la zone de notification.
+    """Génère une icône pour la zone de notification avec le majordome Alfred et badge de mode.
 
-    Fond sombre avec bord arrondi et symbole d'éclair Alfred.
-    La couleur de l'éclair s'adapte au mode (doré en mode normal, émeraude en mode spécial, etc.).
+    La couleur du badge d'état s'adapte au mode (doré en mode normal, émeraude en mode spécial, etc.).
     """
     w, h = size
-    image = Image.new("RGBA", size, (0, 0, 0, 0))
-    draw = ImageDraw.Draw(image)
-
-    # Fond arrondi élégant (slate dark)
-    draw.rounded_rectangle([2, 2, w - 3, h - 3], radius=14, fill=(15, 23, 42, 255))
-
-    # Couleur de l'éclair selon le mode
     mode_lower = mode.lower()
     if mode_lower == "special":
-        bolt_color = (16, 185, 129, 255)  # Vert émeraude
+        badge_color = (16, 185, 129, 255)  # Vert émeraude
     elif mode_lower == "grid":
-        bolt_color = (139, 92, 246, 255)  # Violet
+        badge_color = (139, 92, 246, 255)  # Violet
     else:
-        bolt_color = (250, 204, 21, 255)   # Doré / Jaune vif
+        badge_color = (250, 204, 21, 255)   # Doré / Jaune vif
 
-    # Coordonnées proportionnelles pour l'éclair Alfred ⚡
+    # 1. Tenter de charger l'icône du majordome Alfred
+    icon_path = get_icon_png_path()
+    if icon_path.exists():
+        try:
+            base_image = Image.new("RGBA", size, (0, 0, 0, 0))
+            butler_img = Image.open(icon_path).convert("RGBA")
+
+            # Réduire légèrement pour laisser la place au badge de statut
+            padding = max(2, int(min(w, h) * 0.08))
+            avatar_w = w - (padding * 2)
+            avatar_h = h - (padding * 2)
+            avatar_resized = butler_img.resize((avatar_w, avatar_h), Image.Resampling.LANCZOS)
+            base_image.paste(avatar_resized, (padding, padding), avatar_resized)
+
+            # Dessiner le badge d'état circulaire dans le coin inférieur droit
+            draw = ImageDraw.Draw(base_image)
+            badge_radius = max(5, int(min(w, h) * 0.16))
+            cx = w - badge_radius - 2
+            cy = h - badge_radius - 2
+            # Bordure foncée de contraste
+            draw.ellipse(
+                [cx - badge_radius - 1, cy - badge_radius - 1, cx + badge_radius + 1, cy + badge_radius + 1],
+                fill=(15, 23, 42, 255),
+            )
+            # Pastille de mode
+            draw.ellipse(
+                [cx - badge_radius, cy - badge_radius, cx + badge_radius, cy + badge_radius],
+                fill=badge_color,
+            )
+            return base_image
+        except Exception as e:
+            logger.debug("Échec du chargement de l'avatar Alfred pour le tray, repli sur le logo : %s", e)
+
+    # 2. Repli élégant : éclair stylisé sur fond arrondi
+    image = Image.new("RGBA", size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(image)
+    draw.rounded_rectangle([2, 2, w - 3, h - 3], radius=14, fill=(15, 23, 42, 255))
+
     bolt_polygon = [
         (int(w * 0.58), int(h * 0.10)),
         (int(w * 0.28), int(h * 0.53)),
@@ -41,8 +72,7 @@ def create_tray_icon_image(mode: str = "normal", size: tuple[int, int] = (64, 64
         (int(w * 0.74), int(h * 0.44)),
         (int(w * 0.52), int(h * 0.44)),
     ]
-    draw.polygon(bolt_polygon, fill=bolt_color)
-
+    draw.polygon(bolt_polygon, fill=badge_color)
     return image
 
 

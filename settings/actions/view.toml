@@ -1,21 +1,4 @@
 
-[[actions]]
-name = "Début"
-description = "Début de page / document (Ctrl + Home)"
-modes = ["special"]
-trigger = "h"
-commands = [
-    { type = "hotkey", params = ["ctrl", "home"] }
-]
-
-[[actions]]
-name = "Fin"
-description = "Fin de page / document (Ctrl + End)"
-modes = ["special"]
-trigger = "p"
-commands = [
-    { type = "hotkey", params = ["ctrl", "end"] }
-]
 
 [[actions]]
 name = "Zoom Avant"
@@ -34,3 +17,41 @@ trigger = ')'
 commands = [
     { type = "zoom", direction = "out" }
 ]
+
+
+[[actions]]
+name = "Molette Haut (Scroll Up)"
+description = "Défilement vertical vers le haut"
+modes = ["special"]
+trigger = "$"
+commands = [
+    { type = "scroll", delta = 2 }
+]
+
+[[actions]]
+name = "Molette Bas (Scroll Down)"
+description = "Défilement vertical vers le bas"
+modes = ["special"]
+trigger = "*"
+commands = [
+    { type = "scroll", delta = -2 }
+]
+
+[[actions]]
+name = "Début"
+description = "Début de page / document (Ctrl + Home)"
+modes = ["special"]
+trigger = ""
+commands = [
+    { type = "hotkey", params = ["ctrl", "home"] }
+]
+
+[[actions]]
+name = "Fin"
+description = "Fin de page / document (Ctrl + End)"
+modes = ["special"]
+trigger = ""
+commands = [
+    { type = "hotkey", params = ["ctrl", "end"] }
+]
+

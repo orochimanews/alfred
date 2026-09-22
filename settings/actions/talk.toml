@@ -1,0 +1,27 @@
+[[actions]]
+name = "vocal windows"
+description = ""
+modes = ["normal", "special"]
+trigger = "ù"
+commands = [
+    { type = "hotkey", params = ["win", "h"] }
+]
+
+[[actions]]
+name = "vocal d'antigravity"
+description = ""
+modes = ["special"]
+trigger = "m"
+commands = [
+    { type = "hotkey", params = ["ctrl", "m"] }
+]
+
+[[actions]]
+name = "vocal d'openai et gemini"
+modes = ["special"]
+trigger = "l"
+commands = [
+    { type = "hotkey", params = ["ctrl", "shift", "d"] }
+]
+
+

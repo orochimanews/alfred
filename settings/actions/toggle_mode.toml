@@ -5,11 +5,18 @@
 [[actions]]
 name = "Toggle Mode Spécial/Normal"
 description = "Bascule entre le mode normal et le mode spécial."
-modes = ["normal", "special"]
-trigger = "!"
-toggle = true
+modes = ["all"]
+trigger = "0"
+commands = [{ type = "mode", params = { target = "toggle", toggle_with = "special" } }]
 
-states = [
-    { name = "Vers Spécial", commands = [{ type = "mode", params = ["special"] }] },
-    { name = "Vers Normal", commands = [{ type = "mode", params = ["normal"] }] }
-]
+
+# [[actions]]
+# name = "Toggle Mode Spécial/Grid"
+# description = ""
+# modes = ["special", "grid"]
+# trigger = ""
+# toggle = true
+# states = [
+#    { name = "vers grid", commands = [{ type = "mode", params = ["grid"] }] },
+#    { name = "vers special", commands = [{ type = "mode", params = ["special"] }] }
+# ]
