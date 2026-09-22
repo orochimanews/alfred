@@ -1,13 +1,4 @@
 [[actions]]
-name = "Quitter Alfred"
-description = "Ferme proprement l'application Alfred."
-modes = ["all"]
-trigger = "²"
-commands = [
-    { type = "quit" }
-]
-
-[[actions]]
 name = "Lancer Google Chrome"
 description = "Ouvre directement le vrai navigateur Google Chrome"
 modes = ["special"]

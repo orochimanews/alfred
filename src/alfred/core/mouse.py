@@ -116,8 +116,12 @@ class MouseController:
             up_flag = MOUSEEVENTF_LEFTUP
         self._user32.mouse_event(up_flag, 0, 0, 0, 0)
 
-    def scroll(self, clicks: int = 1) -> None:
-        """Simule un défilement de molette (positif = vers le haut, négatif = vers le bas)."""
+    def scroll(self, clicks: float = 1.0) -> None:
+        """Simule un défilement de molette (positif = vers le haut, négatif = vers le bas).
+
+        ``clicks`` accepte des décimales pour une granularité plus fine :
+        1.0 = un cran complet (120 unités Windows), 0.5 = un demi-cran (60 unités), etc.
+        """
         dw_data = int(clicks * WHEEL_DELTA)
         self._user32.mouse_event(MOUSEEVENTF_WHEEL, 0, 0, dw_data, 0)
 

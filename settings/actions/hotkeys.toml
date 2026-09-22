@@ -63,7 +63,7 @@ commands = [
 name = "maximize"
 description = ""
 modes = ["special"]
-trigger = "!"
+trigger = ""
 commands = [
     { type = "hotkey", params = ["win", "up"] }
 ]

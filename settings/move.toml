@@ -38,7 +38,7 @@ key_down_right = "3"      # Diagonale bas-droite
 # ------------------------------------------------------------------------------
 # Vitesse initiale au moment de l'appui (en pixels par seconde)
 # Une valeur modérée permet un contrôle précis au pixel près lors d'un tap bref.
-initial_speed = 600.0
+initial_speed = 500.0
 
 # Vitesse maximale atteignable lorsque la touche reste maintenue (en pixels/s)
 max_speed = 1800.0
@@ -47,7 +47,7 @@ max_speed = 1800.0
 acceleration_enabled = true
 
 # Durée en secondes pour atteindre la vitesse maximale depuis la vitesse initiale
-acceleration_time = 1.2
+acceleration_time = 1.0
 
 # Type de courbe d'accélération : "linear", "ease_in", "ease_out", "ease_in_out"
 curve = "ease_in_out"
@@ -76,7 +76,7 @@ start_boosted = false     # État initial au démarrage de l'application
 # Si le curseur se trouve dans une zone touchant un ou deux bords (coins ou côtés),
 # presser cette touche plaque instantanément le curseur très proche du bord correspondant.
 edge_snap_enabled = true
-edge_snap_key = "+"                # Touche de rapprochement (ex: "e", "à", "0", "num_0")
+edge_snap_key = "0"                # Touche de rapprochement (ex: "e", "à", "0", "num_0")
 edge_offset = 80                # Distance en pixels par rapport au bord (alias 'steps = 40')
 
 # ------------------------------------------------------------------------------

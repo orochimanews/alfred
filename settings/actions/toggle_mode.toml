@@ -2,11 +2,21 @@
 # ACTION TOGGLE MODE (settings/actions/toggle_mode.toml)
 # ==============================================================================
 
+
+[[actions]]
+name = "Quitter Alfred"
+description = "Ferme proprement l'application Alfred."
+modes = ["all"]
+trigger = "²"
+commands = [
+    { type = "quit" }
+]
+
 [[actions]]
 name = "Toggle Mode Spécial/Normal"
 description = "Bascule entre le mode normal et le mode spécial."
 modes = ["all"]
-trigger = "0"
+trigger = "*"
 commands = [{ type = "mode", params = { target = "toggle", toggle_with = "special" } }]
 
 

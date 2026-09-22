@@ -18,18 +18,18 @@ commands = [
 
 [[actions]]
 name = "liste"
-description = ""
+description = "liste"
 modes = ["special"]
-trigger = "b"
+trigger = "!"
 commands = [
     { type = "hotkey", params = ["win", "tab"] }
 ]
 
 [[actions]]
 name = "programme suivant"
-description = ""
+description = "prog suivant"
 modes = ["special"]
-trigger = "n"
+trigger = ":"
 commands = [
     { type = "hotkey", params = ["alt", "escape"] }
 ]
@@ -61,14 +61,6 @@ commands = [
     { type = "hotkey", params = ["alt", "left"] }
 ]
 
-[[actions]]
-name = "focus adresse"
-description = ""
-modes = ["special"]
-trigger = "k"
-commands = [
-    { type = "hotkey", params = ["ctrl", "l"] }
-]
 
 [[actions]]
 name = "refresh"
@@ -78,6 +70,16 @@ trigger = "R"
 commands = [
     { type = "hotkey", params = ["ctrl", "r"] }
 ]
+
+[[actions]]
+name = "focus adresse"
+description = ""
+modes = ["special"]
+trigger = "k"
+commands = [
+    { type = "hotkey", params = ["ctrl", "l"] }
+]
+
 
 [[actions]]
 name = "chercher onglet"

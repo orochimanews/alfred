@@ -21,5 +21,12 @@ commands = [
 ]
 
 
-
-
+[[actions]]
+name = "Focus Page"
+description = "Déplace la souris en haut-centre-droit et clique pour donner le focus à la zone de contenu principale (générique : YouTube, navigateurs, apps)."
+modes = ["special"]
+trigger = "$"
+commands = [
+    { type = "jump", params = [400, 130] },
+    { type = "click", params = ["left"] }
+]

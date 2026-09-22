@@ -23,7 +23,7 @@ commands = [
 name = "Molette Haut (Scroll Up)"
 description = "Défilement vertical vers le haut"
 modes = ["special"]
-trigger = "$"
+trigger = "-"
 commands = [
     { type = "scroll", delta = 2 }
 ]
@@ -32,7 +32,7 @@ commands = [
 name = "Molette Bas (Scroll Down)"
 description = "Défilement vertical vers le bas"
 modes = ["special"]
-trigger = "*"
+trigger = "+"
 commands = [
     { type = "scroll", delta = -2 }
 ]

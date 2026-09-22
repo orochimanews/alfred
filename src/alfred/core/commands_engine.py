@@ -232,9 +232,9 @@ class CommandsEngine:
     def _cmd_scroll(self, params: dict) -> None:
         delta = params.get("delta", params.get("clicks", 1))
         try:
-            delta_val = int(delta)
+            delta_val = float(delta)
         except (ValueError, TypeError):
-            delta_val = 1
+            delta_val = 1.0
         mouse.scroll(delta_val)
 
     def _cmd_mouse_down(self, params: dict) -> None:
