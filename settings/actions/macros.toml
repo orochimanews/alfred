@@ -30,3 +30,25 @@ commands = [
     { type = "jump", params = [400, 130] },
     { type = "click", params = ["left"] }
 ]
+
+
+[[actions]]
+name = "Clic et Mode Spécial"
+description = "Effectue un clic gauche et bascule vers le mode spécial"
+modes = ["all"]
+trigger = ""
+commands = [
+    { type = "click", params = ["left"] },
+    { type = "mode", params = ["special"] }
+]
+
+
+[[actions]]
+name = "Entrée et Mode Normal"
+description = "Simule la touche Entrée et bascule vers le mode normal"
+modes = ["all"]
+trigger = ""
+commands = [
+    { type = "hotkey", params = ["enter"] },
+    { type = "mode", params = ["normal"] }
+]
