@@ -72,7 +72,7 @@ commands = [
 name = "presse papiers"
 description = ""
 modes = ["special"]
-trigger = ":"
+trigger = ""
 commands = [
     { type = "hotkey", params = ["win", "v"] }
 ]
@@ -81,11 +81,36 @@ commands = [
 name = "renommer"
 description = "Renommer l'élément sélectionné"
 modes = ["special"]
-trigger = "j"
+trigger = ""
 commands = [
     { type = "hotkey", params = ["f2"] }
 ]
 
+[[actions]]
+name = "bureau"
+description = "aller sur le bureau"
+modes = ["special"]
+trigger = "b"
+commands = [
+    { type = "hotkey", params = ["win", "d"] }
+]
 
+[[actions]]
+name = "liste"
+description = "liste"
+modes = ["special"]
+trigger = "!"
+commands = [
+    { type = "hotkey", params = ["win", "tab"] }
+]
+
+[[actions]]
+name = "programme suivant"
+description = "prog suivant"
+modes = ["special"]
+trigger = ":"
+commands = [
+    { type = "hotkey", params = ["alt", "escape"] }
+]
 
 

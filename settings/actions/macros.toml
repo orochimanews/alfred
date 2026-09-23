@@ -25,30 +25,28 @@ commands = [
 name = "Focus Page"
 description = "Déplace la souris en haut-centre-droit et clique pour donner le focus à la zone de contenu principale (générique : YouTube, navigateurs, apps)."
 modes = ["special"]
-trigger = "$"
+trigger = "n"
 commands = [
     { type = "jump", params = [400, 130] },
     { type = "click", params = ["left"] }
 ]
 
-
 [[actions]]
-name = "Clic et Mode Spécial"
-description = "Effectue un clic gauche et bascule vers le mode spécial"
-modes = ["all"]
-trigger = ""
+name = "Clic et Mode Normal"
+description = "Effectue un clic gauche et bascule vers le mode normal"
+modes = ["special"]
+trigger = "e"
 commands = [
     { type = "click", params = ["left"] },
-    { type = "mode", params = ["special"] }
+    { type = "mode", params = ["normal"] }
 ]
-
 
 [[actions]]
 name = "Entrée et Mode Normal"
-description = "Simule la touche Entrée et bascule vers le mode normal"
-modes = ["all"]
-trigger = ""
+description = "Simule la touche Entrée et bascule vers le mode special"
+modes = ["normal"]
+trigger = "$"
 commands = [
     { type = "hotkey", params = ["enter"] },
-    { type = "mode", params = ["normal"] }
+    { type = "mode", params = ["special"] }
 ]
