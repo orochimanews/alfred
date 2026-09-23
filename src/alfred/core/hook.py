@@ -5,7 +5,7 @@ import sys
 import time
 import threading
 import logging
-from typing import Callable, TYPE_CHECKING
+from typing import Callable, TYPE_CHECKING, Any
 import keyboard
 
 if TYPE_CHECKING:
@@ -260,7 +260,7 @@ class KeyboardHookService:
         self._hook_installed = False
         logger.info("Hook clavier global désactivé.")
 
-    def _on_state_event(self, event_type: str, data: any) -> None:
+    def _on_state_event(self, event_type: str, data: Any) -> None:
         """Surveille les changements de mode applicatif."""
         if event_type == "mode_changed" and self.move_manager:
             move_cfg = self.config_manager.move_config

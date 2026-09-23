@@ -342,9 +342,20 @@ def test_command_engine_subgrid():
     grid_mgr.jump_to_subcell.assert_called_once_with(1, 2)
 
 
+def test_command_engine_app_string_args():
+    state = StateManager(initial_mode="special")
+    cfg_mgr = ConfigManager()
+    grid_mgr = MagicMock()
+    engine = CommandsEngine(state, grid_mgr, cfg_mgr)
 
+    with patch("src.alfred.core.commands_engine.find_window_for_app", return_value=None), patch("os.startfile") as mock_startfile:
+        cmd = Command(type="app", params={"command": "notepad", "args": "file.txt"})
+        engine.execute_command(cmd)
+        mock_startfile.assert_called_once_with("notepad", arguments="file.txt")
 
-
-
-
-
+    with patch("src.alfred.core.commands_engine.find_window_for_app", return_value=None), \
+         patch("os.startfile", side_effect=OSError("Not found")), \
+         patch("subprocess.Popen") as mock_popen:
+        cmd_str_fallback = Command(type="app", params={"command": "onenote:", "args": "/new"})
+        engine.execute_command(cmd_str_fallback)
+        mock_popen.assert_called_once_with(["onenote", "/new"], shell=True)

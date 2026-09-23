@@ -3,7 +3,7 @@
 from __future__ import annotations
 import customtkinter as ctk
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from src.alfred.ui.theme import ThemeManager
 from src.alfred.ui.tray import TrayIconService, ToolTip
@@ -144,7 +144,7 @@ class AlfredApp(ctk.CTk):
         if getattr(self.config_manager.app_config.ui, "start_minimized", False):
             self.after(50, self.minimize_to_tray)
 
-    def _on_window_unmap(self, event: any) -> None:
+    def _on_window_unmap(self, event: Any) -> None:
         """Détecte quand l'utilisateur réduit la fenêtre via le bouton '_' de Windows."""
         try:
             if event.widget == self and self.state() == "iconic":
@@ -178,7 +178,7 @@ class AlfredApp(ctk.CTk):
                 self.screen_indicator._window.attributes("-topmost", True)
                 self.screen_indicator._window.lift()
 
-    def close(self, event: any = None) -> None:
+    def close(self, event: Any = None) -> None:
         """Ferme proprement l'application Alfred (arrêt du tray, arrêt du hook, restauration souris, destruction)."""
         logger.info("Fermeture de l'application Alfred...")
         if hasattr(self, "tray_service") and self.tray_service:
@@ -420,7 +420,7 @@ class AlfredApp(ctk.CTk):
         else:
             self.btn_hook_toggle.configure(text="⏸ Pause", fg_color="#DC2626", hover_color="#B91C1C")
 
-    def _on_state_event(self, event_type: str, data: any) -> None:
+    def _on_state_event(self, event_type: str, data: Any) -> None:
         """Reçoit les notifications d'état et planifie la mise à jour sur le thread UI Tkinter."""
         self.after(0, self._handle_state_event_in_ui, event_type, data)
 
@@ -429,7 +429,7 @@ class AlfredApp(ctk.CTk):
         if hasattr(self, "screen_indicator") and self.screen_indicator:
             self.screen_indicator.set_enabled(enabled)
 
-    def _handle_state_event_in_ui(self, event_type: str, data: any) -> None:
+    def _handle_state_event_in_ui(self, event_type: str, data: Any) -> None:
         match event_type:
             case "mode_changed":
                 self._update_header_mode_badge()

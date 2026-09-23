@@ -3,7 +3,7 @@
 from __future__ import annotations
 import logging
 import threading
-from typing import Callable, Optional
+from typing import Callable, Optional, Any
 from PIL import Image, ImageDraw
 import pystray
 
@@ -79,7 +79,7 @@ def create_tray_icon_image(mode: str = "normal", size: tuple[int, int] = (64, 64
 class ToolTip:
     """Infobulle légère au survol pour widgets CustomTkinter / Tkinter."""
 
-    def __init__(self, widget: any, text: str, delay_ms: int = 400) -> None:
+    def __init__(self, widget: Any, text: str, delay_ms: int = 400) -> None:
         self.widget = widget
         self.text = text
         self.delay_ms = delay_ms

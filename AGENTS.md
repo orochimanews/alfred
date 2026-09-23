@@ -31,10 +31,9 @@ alfred/
 │
 ├── settings/                  <-- Fichiers de configuration utilisateur (TOML)
 │   ├── config.toml            <-- Paramètres généraux (mode par défaut, trigger, UI)
-│   ├── commands.toml          <-- Notice descriptive de toutes les commandes
-│   ├── keys.toml              <-- Notice des noms de touches (AZERTY / Anglais)
 │   ├── grid.toml              <-- Configuration de la grille écran (cases, touches)
 │   ├── move.toml              <-- Configuration des déplacements dynamiques curseur
+│   ├── docs/                  <-- Notices descriptives (commands.toml, keys.toml)
 │   └── actions/               <-- Actions individuelles configurables
 │       ├── browser_new_tab.toml
 │       ├── onenote_open.toml

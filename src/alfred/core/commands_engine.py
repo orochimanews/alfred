@@ -5,7 +5,7 @@ import subprocess
 import time
 import os
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Callable
 import keyboard
 
 from src.alfred.core.models import Command, Action
@@ -37,9 +37,9 @@ class CommandsEngine:
         self.move_manager = move_manager
         self._is_fast_mouse_speed: bool = False
         self._previous_mouse_speed: int | None = None
-        self._quit_callback: Any = None
+        self._quit_callback: Callable[[], None] | None = None
 
-    def set_quit_callback(self, callback: Any) -> None:
+    def set_quit_callback(self, callback: Callable[[], None] | None) -> None:
         """Définit le callback pour les commandes d'arrêt du programme."""
         self._quit_callback = callback
 
@@ -402,7 +402,7 @@ class CommandsEngine:
             # 1. Tenter via os.startfile (gère nativement les App Paths Windows, protocoles URI, extensions associées et URLs)
             try:
                 if args:
-                    args_str = " ".join(str(a) for a in args)
+                    args_str = " ".join(str(a) for a in args) if isinstance(args, list) else str(args)
                     os.startfile(target, arguments=args_str)
                 else:
                     os.startfile(target)
@@ -411,9 +411,11 @@ class CommandsEngine:
                 pass
 
             # 2. Repli sur subprocess.Popen si os.startfile échoue
-            cmd_list = [command]
+            cmd_list = [target]
             if isinstance(args, list):
                 cmd_list.extend(str(a) for a in args)
+            elif isinstance(args, str) and args.strip():
+                cmd_list.append(args.strip())
             subprocess.Popen(cmd_list, shell=True)
         except Exception as err:
             logger.error("Erreur lors du lancement de l'application '%s': %s", command, err)

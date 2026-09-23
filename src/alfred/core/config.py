@@ -47,8 +47,16 @@ class ConfigManager:
         self.config_path = self.settings_dir / "config.toml"
         self.grid_path = self.settings_dir / "grid.toml"
         self.move_path = self.settings_dir / "move.toml"
-        self.commands_path = self.settings_dir / "commands.toml"
-        self.keys_path = self.settings_dir / "keys.toml"
+        self.commands_path = (
+            self.settings_dir / "docs" / "commands.toml"
+            if (self.settings_dir / "docs" / "commands.toml").exists()
+            else self.settings_dir / "commands.toml"
+        )
+        self.keys_path = (
+            self.settings_dir / "docs" / "keys.toml"
+            if (self.settings_dir / "docs" / "keys.toml").exists()
+            else self.settings_dir / "keys.toml"
+        )
 
         self.app_config: AppConfig = AppConfig()
         self.grid_config: GridConfig = GridConfig()
@@ -290,20 +298,36 @@ class ConfigManager:
         return parsed_actions
 
     def load_references(self) -> None:
-        """Charge les notices d'aide settings/commands.toml et settings/keys.toml."""
-        if self.commands_path.exists():
-            try:
-                with open(self.commands_path, "rb") as f:
-                    self.commands_reference = tomllib.load(f)
-            except Exception as err:
-                logger.warning("Impossible de lire commands.toml: %s", err)
+        """Charge les notices d'aide commands.toml et keys.toml (dans settings/ ou settings/docs/)."""
+        cmd_candidates = [
+            self.commands_path,
+            self.settings_dir / "docs" / "commands.toml",
+            self.settings_dir / "commands.toml",
+        ]
+        for path in cmd_candidates:
+            if path.exists():
+                try:
+                    with open(path, "rb") as f:
+                        self.commands_reference = tomllib.load(f)
+                    self.commands_path = path
+                    break
+                except Exception as err:
+                    logger.warning("Impossible de lire commands.toml à %s: %s", path, err)
 
-        if self.keys_path.exists():
-            try:
-                with open(self.keys_path, "rb") as f:
-                    self.keys_reference = tomllib.load(f)
-            except Exception as err:
-                logger.warning("Impossible de lire keys.toml: %s", err)
+        key_candidates = [
+            self.keys_path,
+            self.settings_dir / "docs" / "keys.toml",
+            self.settings_dir / "keys.toml",
+        ]
+        for path in key_candidates:
+            if path.exists():
+                try:
+                    with open(path, "rb") as f:
+                        self.keys_reference = tomllib.load(f)
+                    self.keys_path = path
+                    break
+                except Exception as err:
+                    logger.warning("Impossible de lire keys.toml à %s: %s", path, err)
 
     def get_action_for_key(self, key_name: str, mode: str) -> Action | None:
         """Trouve l'action correspondant à une touche dans un mode donné."""
