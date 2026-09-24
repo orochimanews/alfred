@@ -187,10 +187,10 @@ class Action:
         if isinstance(raw_trigger, list):
             for t in raw_trigger:
                 triggers.update(generate_key_aliases(str(t)))
-            trigger = ", ".join(str(t).strip() for t in raw_trigger if str(t).strip()).lower()
+            trigger = ", ".join(str(t).strip() for t in raw_trigger if str(t).strip())
         else:
             raw_s = str(raw_trigger).strip()
-            trigger = raw_s.lower()
+            trigger = raw_s
             if "," in raw_s and raw_s != ",":
                 for t in raw_s.split(","):
                     if t.strip():
@@ -394,7 +394,7 @@ class GridConfig:
 
 
 def generate_key_aliases(key: str | list[str]) -> set[str]:
-    """Génère tous les alias courants pour une touche ou une liste de touches (chiffre, pavé numérique, séparateurs)."""
+    """Génère tous les alias courants pour une touche ou une liste de touches (chiffre, pavé numérique, séparateurs, casse)."""
     raw_items = key if isinstance(key, list) else [key]
     keys: list[str] = []
     for item in raw_items:
@@ -406,9 +406,35 @@ def generate_key_aliases(key: str | list[str]) -> set[str]:
 
     aliases: set[str] = set()
     for raw in keys:
-        k = str(raw).lower().strip()
-        if not k:
+        raw_str = str(raw).strip()
+        if not raw_str:
             continue
+
+        # 1. Gestion des lettres alphabétiques uniques (sensibilité à la casse a vs A)
+        if len(raw_str) == 1 and raw_str.isalpha():
+            if raw_str.isupper():
+                # Touche majuscule 'A' : alias avec Shift/Maj
+                aliases.add(raw_str)
+                aliases.add(f"shift+{raw_str.lower()}")
+                aliases.add(f"maj+{raw_str.lower()}")
+            else:
+                # Touche minuscule 'a' : stricte, sans shift
+                aliases.add(raw_str)
+            continue
+
+        # 2. Gestion des combinaisons avec shift (ex: shift+a, maj+a)
+        raw_lower = raw_str.lower()
+        if raw_lower.startswith(("shift+", "maj+")):
+            parts = raw_str.split("+", 1)
+            tail = parts[1].strip()
+            aliases.add(f"shift+{tail.lower()}")
+            aliases.add(f"maj+{tail.lower()}")
+            if len(tail) == 1 and tail.isalpha():
+                aliases.add(tail.upper())
+            continue
+
+        # 3. Pour les autres touches, normalisation standard en minuscules
+        k = raw_lower
         aliases.add(k)
         if k in ("0", "num_0", "num 0", "à"):
             aliases.update(["0", "num_0", "num 0", "0 (pavé num.)", "0 (pave num.)", "à"])

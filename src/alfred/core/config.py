@@ -330,14 +330,28 @@ class ConfigManager:
                     logger.warning("Impossible de lire keys.toml à %s: %s", path, err)
 
     def get_action_for_key(self, key_name: str, mode: str) -> Action | None:
-        """Trouve l'action correspondant à une touche dans un mode donné."""
-        normalized_key = key_name.lower().strip()
+        """Trouve l'action correspondant à une touche dans un mode donné.
+        Respecte la sensibilité à la casse pour les lettres alphabétiques simples (ex: 'a' vs 'A' / 'shift+a')
+        tout en restant tolérant et rétrocompatible pour les autres touches (ex: 'F12', 'Escape').
+        """
+        raw_key = key_name.strip()
         normalized_mode = mode.lower().strip()
+        is_single_letter = len(raw_key) == 1 and raw_key.isalpha()
 
         for act in self.actions:
-            if (act.triggers and normalized_key in act.triggers) or act.trigger.lower().strip() == normalized_key:
-                # Vérifier si l'action est active dans ce mode (ou mode 'all')
-                act_modes = [m.lower().strip() for m in act.modes]
-                if "all" in act_modes or normalized_mode in act_modes:
+            act_modes = [m.lower().strip() for m in act.modes]
+            if "all" not in act_modes and normalized_mode not in act_modes:
+                continue
+
+            # 1. Correspondance exacte sensible à la casse
+            if (act.triggers and raw_key in act.triggers) or act.trigger == raw_key:
+                return act
+
+            # 2. Si ce n'est PAS une lettre simple isolée (ex: "f1", "escape", "ctrl+c"),
+            # on permet la correspondance insensible à la casse
+            if not is_single_letter:
+                lower_key = raw_key.lower()
+                if (act.triggers and lower_key in {t.lower() for t in act.triggers}) or act.trigger.lower() == lower_key:
                     return act
+
         return None

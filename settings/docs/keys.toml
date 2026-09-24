@@ -51,7 +51,7 @@ f11 = "F11"
 f12 = "F12"
 
 [azerty_letters]
-description = "Lettres de l'alphabet (disposition AZERTY française)"
+description = "Lettres de l'alphabet (sensibles à la casse : 'a' sans Shift, 'A' ou 'shift+a' avec Shift)"
 a = "Touche A"
 z = "Touche Z"
 e = "Touche E"

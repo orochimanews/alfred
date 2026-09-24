@@ -164,6 +164,17 @@ def is_modifier_pressed_win32(mod: str) -> bool:
     return False
 
 
+def is_caps_lock_active_win32() -> bool:
+    """Vérifie si le verrouillage des majuscules (Caps Lock) est actif via Windows API."""
+    if sys.platform != "win32":
+        return False
+    try:
+        import ctypes
+        return bool(ctypes.windll.user32.GetKeyState(0x14) & 1)
+    except Exception:
+        return False
+
+
 def match_shortcut(shortcut: str, candidate_keys: list[str], pressed_keys: set[str]) -> bool:
     """Vérifie si une frappe clavier correspond à un raccourci défini (ex: 'ctrl+shift+q' ou 'f12')."""
     s = shortcut.strip().lower()
@@ -602,9 +613,33 @@ class KeyboardHookService:
                         return False
 
             # 3. Vérification des actions enregistrées pour le mode actif
+            is_shift = (
+                is_modifier_pressed_win32("shift")
+                or any(k in self._pressed_keys for k in ("shift", "maj", "left shift", "right shift"))
+            )
+            is_caps = is_caps_lock_active_win32()
+
+            action_candidate_keys: list[str] = []
+            if len(key_name) == 1 and key_name.isalpha():
+                raw_event_name = (event.name or "").strip()
+                is_upper = raw_event_name.isupper() or (is_shift != is_caps)
+                if is_upper:
+                    action_candidate_keys = [
+                        key_name.upper(),
+                        f"shift+{key_name.lower()}",
+                        f"maj+{key_name.lower()}",
+                    ]
+                else:
+                    action_candidate_keys = [key_name.lower()]
+            else:
+                action_candidate_keys = list(candidate_keys)
+                raw_event_name = (event.name or "").strip()
+                if raw_event_name and raw_event_name not in action_candidate_keys:
+                    action_candidate_keys.insert(0, raw_event_name)
+
             action = None
             matched_trigger = key_name
-            for cand in candidate_keys:
+            for cand in action_candidate_keys:
                 action = self.config_manager.get_action_for_key(cand, current_mode)
                 if action is not None:
                     matched_trigger = cand

@@ -169,4 +169,99 @@ def test_hook_reinstall_and_health_check(monkeypatch):
     assert len(started) == 1
 
 
+def test_hook_uppercase_letter_trigger(monkeypatch):
+    """Vérifie que le hook clavier distingue 'a' (sans shift) et 'A' (avec shift / majuscule)."""
+    from src.alfred.core.models import Action, Command
+
+    config_mgr = ConfigManager()
+    config_mgr.load_all()
+    config_mgr.app_config.general.special_mode_key = ""
+
+    act_lower = Action(
+        name="Action Minuscule A",
+        modes=["special"],
+        trigger="a",
+        triggers={"a"},
+        commands=[Command(type="text", params={"content": "minuscule"})],
+    )
+    act_upper = Action(
+        name="Action Majuscule A",
+        modes=["special"],
+        trigger="A",
+        triggers={"A", "shift+a", "maj+a"},
+        commands=[Command(type="text", params={"content": "majuscule"})],
+    )
+    config_mgr.actions = [act_lower, act_upper]
+
+    state_mgr = StateManager(initial_mode="special")
+    grid_mgr = GridManager(config=config_mgr.grid_config, state_manager=state_mgr)
+    commands_engine = CommandsEngine(state_manager=state_mgr, grid_manager=grid_mgr, config_manager=config_mgr)
+
+    hook_service = KeyboardHookService(
+        state_manager=state_mgr,
+        config_manager=config_mgr,
+        commands_engine=commands_engine,
+        grid_manager=grid_mgr,
+    )
+
+    executed = []
+    def mock_execute(action, trigger_key=""):
+        executed.append((action.name, trigger_key))
+        return True
+
+    monkeypatch.setattr(commands_engine, "execute_action", mock_execute)
+
+    # 1. Frappe de 'a' SANS shift -> doit exécuter "Action Minuscule A"
+    event_lower = MagicMock()
+    event_lower.name = "a"
+    event_lower.scan_code = 16
+    event_lower.event_type = "down"
+
+    ret_lower = hook_service._on_key_event(event_lower)
+    assert ret_lower is False
+    assert len(executed) == 1
+    assert executed[-1][0] == "Action Minuscule A"
+
+    # Réinitialiser touches enfoncées
+    hook_service._pressed_keys.clear()
+
+    # 2. Frappe de 'a' AVEC shift enfoncé -> doit exécuter "Action Majuscule A"
+    hook_service._pressed_keys.add("shift")
+    event_with_shift = MagicMock()
+    event_with_shift.name = "a"
+    event_with_shift.scan_code = 16
+    event_with_shift.event_type = "down"
+
+    ret_shift = hook_service._on_key_event(event_with_shift)
+    assert ret_shift is False
+    assert len(executed) == 2
+    assert executed[-1][0] == "Action Majuscule A"
+
+    # 3. Frappe de 'A' (événement natif majuscule sous Windows) -> doit exécuter "Action Majuscule A"
+    hook_service._pressed_keys.clear()
+    event_upper = MagicMock()
+    event_upper.name = "A"
+    event_upper.scan_code = 16
+    event_upper.event_type = "down"
+
+    ret_upper = hook_service._on_key_event(event_upper)
+    assert ret_upper is False
+    assert len(executed) == 3
+    assert executed[-1][0] == "Action Majuscule A"
+
+    # 4. Action avec minuscule seule : si l'utilisateur appuie sur Shift, l'action minuscule ne doit PAS se déclencher
+    config_mgr.actions = [act_lower]
+    hook_service._pressed_keys.clear()
+    hook_service._pressed_keys.add("shift")
+    event_unmatched_upper = MagicMock()
+    event_unmatched_upper.name = "a"
+    event_unmatched_upper.scan_code = 16
+    event_unmatched_upper.event_type = "down"
+
+    ret_unmatched = hook_service._on_key_event(event_unmatched_upper)
+    # Ne doit pas intercepter (ret_unmatched == True) car aucune action pour A/shift+a n'existe
+    assert ret_unmatched is True
+    assert len(executed) == 3
+
+
 

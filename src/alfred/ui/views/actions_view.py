@@ -112,11 +112,17 @@ class ActionsView(ctk.CTkFrame):
             card.grid_columnconfigure(1, weight=1)
 
             # Badge Touche
-            key_text = f"[{action.trigger.upper()}]" if action.trigger else "[--]"
+            if not action.trigger:
+                key_text = "[--]"
+            elif len(action.trigger) == 1 and action.trigger.isalpha() and action.trigger.isupper():
+                key_text = f"[Shift+{action.trigger}]"
+            else:
+                key_text = f"[{action.trigger}]"
+
             btn_key = ctk.CTkButton(
                 card,
                 text=key_text,
-                width=55,
+                width=max(55, len(key_text) * 10),
                 height=30,
                 font=self.theme_manager.get_font(size_offset=0, weight="bold"),
                 fg_color=("#3B82F6", "#1D4ED8"),

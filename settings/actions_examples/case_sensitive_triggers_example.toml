@@ -1,0 +1,32 @@
+# ==============================================================================
+# EXEMPLE : DÉCLENCHEURS SENSIBLES À LA CASSE (MINUSCULE VS MAJUSCULE)
+# ==============================================================================
+# Alfred distingue désormais les lettres minuscules et majuscules :
+# - trigger = "a"       -> Déclenché par la touche 'a' seule (sans Shift)
+# - trigger = "A"       -> Déclenché par 'Shift + a' (ou Caps Lock)
+# - trigger = "shift+a" -> Déclenché également par 'Shift + a'
+#
+# Vous pouvez ainsi attribuer deux actions totalement différentes à la même
+# touche selon que vous appuyez sur Shift ou non !
+
+[[actions]]
+name = "Action Minuscule (a)"
+description = "Exemple d'action déclenchée par 'a' sans Shift"
+modes = ["special"]
+trigger = "a"
+
+[[actions.commands]]
+type = "text"
+content = "minuscule"
+
+# ------------------------------------------------------------------------------
+
+[[actions]]
+name = "Action Majuscule (A / Shift+A)"
+description = "Exemple d'action déclenchée par 'A' avec Shift"
+modes = ["special"]
+trigger = "A"
+
+[[actions.commands]]
+type = "text"
+content = "MAJUSCULE"

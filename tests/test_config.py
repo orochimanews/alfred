@@ -152,3 +152,55 @@ def test_config_start_in_special_mode_inference(tmp_path: Path):
     loaded3 = mgr.load_app_config()
     assert loaded3.general.start_in_special_mode is False
     assert loaded3.general.default_mode == "normal"
+
+
+def test_get_action_for_key_case_sensitivity(tmp_path: Path):
+    """Vérifie que la recherche d'action distingue strictement 'a' de 'A' / 'shift+a'."""
+    from src.alfred.core.models import Action
+
+    mgr = ConfigManager(base_dir=tmp_path)
+    act_lower = Action.from_dict({
+        "name": "Action Minuscule",
+        "trigger": "a",
+        "modes": ["special"],
+    })
+    act_upper = Action.from_dict({
+        "name": "Action Majuscule",
+        "trigger": "A",
+        "modes": ["special"],
+    })
+    act_func = Action.from_dict({
+        "name": "Action F12",
+        "trigger": "f12",
+        "modes": ["special"],
+    })
+    mgr.actions = [act_lower, act_upper, act_func]
+
+    # 'a' trouve l'action minuscule
+    found_a = mgr.get_action_for_key("a", "special")
+    assert found_a is not None
+    assert found_a.name == "Action Minuscule"
+
+    # 'A' trouve l'action majuscule
+    found_A = mgr.get_action_for_key("A", "special")
+    assert found_A is not None
+    assert found_A.name == "Action Majuscule"
+
+    # 'shift+a' trouve l'action majuscule
+    found_shift_a = mgr.get_action_for_key("shift+a", "special")
+    assert found_shift_a is not None
+    assert found_shift_a.name == "Action Majuscule"
+
+    # Touche sans majuscule définie : 'B' ne doit pas matcher 'b'
+    act_b = Action.from_dict({
+        "name": "Action B Minuscule",
+        "trigger": "b",
+        "modes": ["special"],
+    })
+    mgr.actions.append(act_b)
+    assert mgr.get_action_for_key("B", "special") is None
+
+    # Les touches non-alphabétiques restent insensibles à la casse (F12 == f12)
+    found_f12 = mgr.get_action_for_key("F12", "special")
+    assert found_f12 is not None
+    assert found_f12.name == "Action F12"

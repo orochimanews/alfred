@@ -39,7 +39,7 @@ def test_command_with_array_params():
 
 def test_action_from_dict_standard():
     data = {
-        "name": "Test Action",
+        "name": "Test Action Majuscule",
         "description": "Une description",
         "modes": ["special", "custom"],
         "trigger": "A",
@@ -49,13 +49,27 @@ def test_action_from_dict_standard():
         ]
     }
     action = Action.from_dict(data)
-    assert action.name == "Test Action"
-    assert action.trigger == "a"  # Doit être mis en minuscule
+    assert action.name == "Test Action Majuscule"
+    assert action.trigger == "A"  # Préserve la majuscule pour sensibilité à la casse
+    assert "A" in action.triggers
+    assert "shift+a" in action.triggers
+    assert "a" not in action.triggers
     assert action.modes == ["special", "custom"]
     assert len(action.commands) == 2
     assert action.commands[0].type == "hotkey"
     assert action.commands[1].type == "sleep"
     assert action.toggle is False
+
+    # Test avec minuscule
+    data_lower = {
+        "name": "Test Action Minuscule",
+        "trigger": "a",
+    }
+    action_lower = Action.from_dict(data_lower)
+    assert action_lower.trigger == "a"
+    assert "a" in action_lower.triggers
+    assert "A" not in action_lower.triggers
+    assert "shift+a" not in action_lower.triggers
 
 
 def test_action_from_dict_toggle():
