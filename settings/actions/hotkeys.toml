@@ -96,21 +96,21 @@ commands = [
 ]
 
 [[actions]]
-name = "liste"
-description = "liste"
-modes = ["special"]
-trigger = "!"
-commands = [
-    { type = "hotkey", params = ["win", "tab"] }
-]
-
-[[actions]]
 name = "programme suivant"
 description = "prog suivant"
 modes = ["special"]
 trigger = ":"
 commands = [
     { type = "hotkey", params = ["alt", "escape"] }
+]
+
+[[actions]]
+name = "liste"
+description = "liste"
+modes = ["special"]
+trigger = "!"
+commands = [
+    { type = "hotkey", params = ["win", "tab"] }
 ]
 
 

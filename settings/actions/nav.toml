@@ -47,7 +47,7 @@ commands = [
 name = "refresh"
 description = ""
 modes = ["special"]
-trigger = ""
+trigger = "R"
 commands = [
     { type = "hotkey", params = ["ctrl", "r"] }
 ]
