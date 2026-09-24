@@ -66,6 +66,7 @@ def _ensure_desktop_access() -> None:
         h_desk = user32.OpenDesktopW("default", 0, False, 0x01FF)
         if h_desk:
             user32.SetThreadDesktop(h_desk)
+            user32.CloseDesktop(h_desk)
     except Exception:
         pass
 
@@ -143,22 +144,35 @@ def bring_window_to_foreground(hwnd: int) -> bool:
         else:
             user32.ShowWindow(hwnd, SW_SHOW)
 
+        # Déverrouiller les permissions de mise au premier plan Windows
+        try:
+            user32.LockSetForegroundWindow(2)  # LSFW_UNLOCK = 2
+        except Exception:
+            pass
+
         fore_hwnd = user32.GetForegroundWindow()
         fore_thread = user32.GetWindowThreadProcessId(fore_hwnd, None) if fore_hwnd else 0
         cur_thread = kernel32.GetCurrentThreadId()
 
         attached = False
         if fore_thread and fore_thread != cur_thread:
-            user32.AttachThreadInput(cur_thread, fore_thread, True)
-            attached = True
+            try:
+                attached = bool(user32.AttachThreadInput(cur_thread, fore_thread, True))
+            except Exception:
+                attached = False
 
         try:
             user32.BringWindowToTop(hwnd)
             user32.SetForegroundWindow(hwnd)
         finally:
             if attached:
-                user32.AttachThreadInput(cur_thread, fore_thread, False)
+                try:
+                    user32.AttachThreadInput(cur_thread, fore_thread, False)
+                except Exception:
+                    pass
 
+        # Simulation d'un appui Alt rapide pour contourner la restriction de focus Windows
+        user32.keybd_event(0x12, 0, 0, 0)
         user32.keybd_event(0x12, 0, 2, 0)
         user32.SetForegroundWindow(hwnd)
         return True

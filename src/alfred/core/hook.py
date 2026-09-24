@@ -54,12 +54,20 @@ def _setup_hook_thread_win32() -> None:
             state.Version = 1
             state.ControlMask = 0x1  # THREAD_POWER_THROTTLING_EXECUTION_SPEED
             state.StateMask = 0       # 0 = désactiver le throttling
-            kernel32.SetThreadInformation(
-                h_thread,
-                49,  # ThreadPowerThrottlingState
-                ctypes.byref(state),
-                ctypes.sizeof(state),
-            )
+
+            # OpenThread avec THREAD_SET_INFORMATION (0x0020) requis pour SetThreadInformation
+            # ThreadPowerThrottling = 3
+            h_thread_set = kernel32.OpenThread(0x0020, False, kernel32.GetCurrentThreadId())
+            if h_thread_set:
+                try:
+                    kernel32.SetThreadInformation(
+                        h_thread_set,
+                        3,  # ThreadPowerThrottling
+                        ctypes.byref(state),
+                        ctypes.sizeof(state),
+                    )
+                finally:
+                    kernel32.CloseHandle(h_thread_set)
         except Exception:
             pass
 
@@ -102,8 +110,14 @@ def _patch_keyboard_windows_listen() -> None:
             _winkeyboard.prepare_intercept(callback)
             msg = MSG()
             p_msg = ctypes.byref(msg)
-            # while GetMessage(...) > 0 : continue tant que WM_QUIT (0) ou une erreur (-1) n'arrive pas
-            while _winkeyboard.GetMessage(p_msg, 0, 0, 0) > 0:
+            # Boucle Win32 robuste : s'arrête sur WM_QUIT (0), tolère les retours -1 transitoires
+            while True:
+                res = _winkeyboard.GetMessage(p_msg, 0, 0, 0)
+                if res == 0:  # WM_QUIT reçu
+                    break
+                elif res == -1:  # Erreur système transitoire, ne pas quitter le thread
+                    time.sleep(0.01)
+                    continue
                 _winkeyboard.TranslateMessage(p_msg)
                 _winkeyboard.DispatchMessage(p_msg)
 
@@ -325,6 +339,20 @@ class KeyboardHookService:
             # Événement KEY_DOWN
             # Éviter le spam des répétitions automatiques si la touche est déjà enfoncée
             is_repeat = any(k in self._pressed_keys for k in candidate_keys)
+            # Protection contre les touches fantômes restées coincées (perte de focus, fermeture de fenêtre type Explorateur)
+            if is_repeat and sys.platform == "win32" and getattr(event, "scan_code", None):
+                try:
+                    import ctypes
+                    user32 = ctypes.windll.user32
+                    vk = user32.MapVirtualKeyW(abs(event.scan_code), 1)
+                    if vk and not (user32.GetAsyncKeyState(vk) & 0x8000):
+                        # La touche n'est plus physiquement maintenue : c'était un reliquat coincé
+                        for k in candidate_keys:
+                            self._pressed_keys.discard(k)
+                        is_repeat = False
+                except Exception:
+                    pass
+
             for k in candidate_keys:
                 self._pressed_keys.add(k)
 

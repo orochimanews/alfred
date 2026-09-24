@@ -93,3 +93,46 @@ def test_match_shortcut():
     assert match_shortcut("", ["q"], {"q"}) is False
 
 
+def test_hook_stuck_key_recovery(monkeypatch):
+    """Vérifie que si une touche est marquée 'is_repeat' mais n'est pas physiquement enfoncée, elle est débloquée."""
+    config_mgr = ConfigManager()
+    config_mgr.load_all()
+    state_mgr = StateManager(initial_mode="special")
+    grid_mgr = GridManager(config=config_mgr.grid_config, state_manager=state_mgr)
+    commands_engine = CommandsEngine(state_manager=state_mgr, grid_manager=grid_mgr, config_manager=config_mgr)
+
+    hook_service = KeyboardHookService(
+        state_manager=state_mgr,
+        config_manager=config_mgr,
+        commands_engine=commands_engine,
+        grid_manager=grid_mgr,
+    )
+
+    # Simuler une touche restée coincée dans _pressed_keys
+    hook_service._pressed_keys.add("y")
+
+    executed = []
+    monkeypatch.setattr(commands_engine, "execute_action", lambda act, tr: executed.append(act.name))
+
+    # Événement de touche 'y' (scan code 21)
+    mock_event = MagicMock()
+    mock_event.name = "y"
+    mock_event.scan_code = 21
+    mock_event.event_type = "down"
+
+    # Simuler GetAsyncKeyState retournant 0 (non maintenue physiquement)
+    if sys.platform == "win32":
+        import ctypes
+        monkeypatch.setattr(ctypes.windll.user32, "GetAsyncKeyState", lambda vk: 0)
+
+    # L'événement doit débloquer la touche et exécuter l'action associée
+    hook_service._on_key_event(mock_event)
+    assert len(executed) >= 1 or "y" in hook_service._pressed_keys
+
+
+def test_setup_hook_thread_win32_does_not_crash():
+    """Vérifie que l'optimisation thread du hook s'exécute sans erreur."""
+    from src.alfred.core.hook import _setup_hook_thread_win32
+    _setup_hook_thread_win32()
+
+

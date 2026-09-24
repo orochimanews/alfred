@@ -140,9 +140,22 @@ class AlfredApp(ctk.CTk):
         # Capture de la réduction de fenêtre (clic sur le bouton '_' de la barre de titre)
         self.bind("<Unmap>", self._on_window_unmap)
 
+        # Maintien de l'activité de la boucle d'événements Tkinter même fenêtre cachée
+        self._schedule_keepalive()
+
         # Réduction initiale dans le tray si configurée
         if getattr(self.config_manager.app_config.ui, "start_minimized", False):
             self.after(50, self.minimize_to_tray)
+
+    def _schedule_keepalive(self) -> None:
+        """Maintient la boucle d'événements Tkinter active même quand la fenêtre principale est cachée."""
+        try:
+            self.after(200, self._keepalive_tick)
+        except Exception:
+            pass
+
+    def _keepalive_tick(self) -> None:
+        self._schedule_keepalive()
 
     def _on_window_unmap(self, event: Any) -> None:
         """Détecte quand l'utilisateur réduit la fenêtre via le bouton '_' de Windows."""

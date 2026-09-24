@@ -110,12 +110,18 @@ def configure_windows_process() -> None:
             throttling_state.ControlMask = PROCESS_POWER_THROTTLING_EXECUTION_SPEED
             throttling_state.StateMask = 0  # Désactiver le throttling
 
-            kernel32.SetProcessInformation(
-                p_handle,
-                ProcessPowerThrottling,
-                ctypes.byref(throttling_state),
-                ctypes.sizeof(throttling_state),
-            )
+            # OpenProcess avec PROCESS_SET_INFORMATION (0x0200) requis pour SetProcessInformation
+            h_proc_set = kernel32.OpenProcess(0x0200, False, kernel32.GetCurrentProcessId())
+            if h_proc_set:
+                try:
+                    kernel32.SetProcessInformation(
+                        h_proc_set,
+                        ProcessPowerThrottling,
+                        ctypes.byref(throttling_state),
+                        ctypes.sizeof(throttling_state),
+                    )
+                finally:
+                    kernel32.CloseHandle(h_proc_set)
         except Exception:
             pass
 
