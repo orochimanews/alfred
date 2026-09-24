@@ -264,4 +264,83 @@ def test_hook_uppercase_letter_trigger(monkeypatch):
     assert len(executed) == 3
 
 
+def test_hook_uppercase_action_not_intercepted_by_lowercase_move_grid(monkeypatch):
+    """Vérifie que Shift+Q déclenche bien une action Q et n'est pas capturé par grid_toggle_key='q'."""
+    from src.alfred.core.models import Action, Command, MoveConfig
+    from src.alfred.core.move import MoveManager
+    from src.alfred.core.mouse import mouse
+
+    config_mgr = ConfigManager()
+    config_mgr.load_all()
+    config_mgr.app_config.general.special_mode_key = ""
+
+    # Action avec trigger majuscule 'Q'
+    act_quit = Action(
+        name="Quitter",
+        modes=["all"],
+        trigger="Q",
+        triggers={"Q", "shift+q", "maj+q"},
+        commands=[Command(type="quit")],
+    )
+    config_mgr.actions = [act_quit]
+
+    # MoveManager avec grid_toggle_key = 'q' (minuscule)
+    move_cfg = MoveConfig(
+        enabled=True,
+        active_modes=["special"],
+        grid_enabled=True,
+        grid_toggle_key="q",
+    )
+    config_mgr.move_config = move_cfg
+
+    state_mgr = StateManager(initial_mode="special")
+    move_mgr = MoveManager(config=move_cfg, mouse_controller=mouse, state_manager=state_mgr)
+    grid_mgr = GridManager(config=config_mgr.grid_config, state_manager=state_mgr)
+    commands_engine = CommandsEngine(state_manager=state_mgr, grid_manager=grid_mgr, config_manager=config_mgr, move_manager=move_mgr)
+
+    hook_service = KeyboardHookService(
+        state_manager=state_mgr,
+        config_manager=config_mgr,
+        commands_engine=commands_engine,
+        grid_manager=grid_mgr,
+        move_manager=move_mgr,
+    )
+
+    executed = []
+    def mock_execute(action, trigger_key=""):
+        executed.append((action.name, trigger_key))
+        return True
+
+    monkeypatch.setattr(commands_engine, "execute_action", mock_execute)
+
+    # 1. Frappe de 'q' SANS shift -> doit activer Move Grid, PAS l'action Quitter
+    event_q = MagicMock()
+    event_q.name = "q"
+    event_q.scan_code = 16
+    event_q.event_type = "down"
+
+    ret_q = hook_service._on_key_event(event_q)
+    assert ret_q is False
+    assert move_mgr.is_grid_active is True
+    assert len(executed) == 0
+
+    # Réinitialiser Move Grid
+    move_mgr.set_grid_active(False)
+    hook_service._pressed_keys.clear()
+
+    # 2. Frappe de Shift + 'q' -> doit exécuter l'action Quitter ('Q'), PAS activer Move Grid
+    hook_service._pressed_keys.add("shift")
+    event_shift_q = MagicMock()
+    event_shift_q.name = "q"
+    event_shift_q.scan_code = 16
+    event_shift_q.event_type = "down"
+
+    ret_shift_q = hook_service._on_key_event(event_shift_q)
+    assert ret_shift_q is False
+    assert move_mgr.is_grid_active is False
+    assert len(executed) == 1
+    assert executed[0][0] == "Quitter"
+
+
+
 

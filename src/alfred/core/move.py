@@ -33,6 +33,18 @@ def _compute_curve_factor(progress: float, curve: str) -> float:
             return 0.5 * (1.0 - math.cos(p * math.pi))
 
 
+def _matches_key(key_name: str, allowed_keys: set[str]) -> bool:
+    """Vérifie si key_name correspond à l'une des touches autorisées.
+    Respecte la sensibilité à la casse pour les lettres simples (ex: 'q' != 'Q').
+    """
+    raw = key_name.strip()
+    if raw in allowed_keys:
+        return True
+    if not (len(raw) == 1 and raw.isalpha()):
+        return raw.lower() in {k.lower() for k in allowed_keys}
+    return False
+
+
 class MoveManager:
     """Contrôleur de déplacement fluide et dynamique du curseur au clavier."""
 
@@ -135,15 +147,18 @@ class MoveManager:
         """Vérifie si une touche correspond à la bascule vers la grille pavé numérique."""
         if not self.config.enabled or not self.config.grid_enabled:
             return False
-        k = key_name.lower().strip()
-        return k in self.config.keys_grid_toggle
+        return _matches_key(key_name, self.config.keys_grid_toggle)
 
     def is_grid_cell_key(self, key_name: str) -> bool:
         """Vérifie si une touche correspond à une case de la grille pavé numérique."""
         if not self.config.enabled or not self.config.grid_enabled:
             return False
-        k = key_name.lower().strip()
-        return k in self.config.grid_cells
+        raw = key_name.strip()
+        if raw in self.config.grid_cells:
+            return True
+        if not (len(raw) == 1 and raw.isalpha()):
+            return raw.lower() in {k.lower(): v for k, v in self.config.grid_cells.items()}
+        return False
 
     def get_grid_cell_center(
         self,
@@ -193,8 +208,11 @@ class MoveManager:
         """Si la touche correspond à une case de grille configurée, saute sur cette case."""
         if not self.config.enabled or not self.config.grid_enabled:
             return None
-        k = key_name.lower().strip()
-        coords = self.config.grid_cells.get(k)
+        raw = key_name.strip()
+        coords = self.config.grid_cells.get(raw)
+        if coords is None and not (len(raw) == 1 and raw.isalpha()):
+            lower_map = {k.lower(): v for k, v in self.config.grid_cells.items()}
+            coords = lower_map.get(raw.lower())
         if coords is not None:
             col, row = coords
             return self.jump_grid_cell(col, row, trigger_key=key_name)
@@ -204,7 +222,7 @@ class MoveManager:
         """Indique si la touche déclenche le rapprochement vers le bord de l'écran."""
         if not self.config.enabled or not self.config.edge_snap_enabled:
             return False
-        return key_name.lower().strip() in self.config.edge_snap_keys
+        return _matches_key(key_name, self.config.edge_snap_keys)
 
     def calculate_edge_snap(
         self,
@@ -274,37 +292,34 @@ class MoveManager:
         """Vérifie si une touche correspond au raccourci de bascule boost."""
         if not self.config.boost_enabled:
             return False
-        k = key_name.lower().strip()
-        return k in self.config.keys_boost
+        return _matches_key(key_name, self.config.keys_boost)
 
     def is_move_key(self, key_name: str) -> bool:
         """Vérifie si une touche correspond à l'une des directions de déplacement."""
         if not self.config.enabled:
             return False
-        k = key_name.lower().strip()
-        return k in self.config.all_move_keys
+        return _matches_key(key_name, self.config.all_move_keys)
 
     def get_directions_for_key(self, key_name: str) -> set[str]:
         """Retourne l'ensemble des directions cardinales activées par une touche."""
-        k = key_name.lower().strip()
         dirs: set[str] = set()
 
-        if k in self.config.keys_up:
+        if _matches_key(key_name, self.config.keys_up):
             dirs.add("up")
-        if k in self.config.keys_down:
+        if _matches_key(key_name, self.config.keys_down):
             dirs.add("down")
-        if k in self.config.keys_left:
+        if _matches_key(key_name, self.config.keys_left):
             dirs.add("left")
-        if k in self.config.keys_right:
+        if _matches_key(key_name, self.config.keys_right):
             dirs.add("right")
 
-        if k in self.config.keys_up_left:
+        if _matches_key(key_name, self.config.keys_up_left):
             dirs.update(["up", "left"])
-        if k in self.config.keys_up_right:
+        if _matches_key(key_name, self.config.keys_up_right):
             dirs.update(["up", "right"])
-        if k in self.config.keys_down_left:
+        if _matches_key(key_name, self.config.keys_down_left):
             dirs.update(["down", "left"])
-        if k in self.config.keys_down_right:
+        if _matches_key(key_name, self.config.keys_down_right):
             dirs.update(["down", "right"])
 
         return dirs

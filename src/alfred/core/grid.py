@@ -13,6 +13,18 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+def _matches_key(key_name: str, allowed_keys: set[str]) -> bool:
+    """Vérifie si key_name correspond à l'une des touches autorisées.
+    Respecte la sensibilité à la casse pour les lettres simples (ex: 'q' != 'Q').
+    """
+    raw = key_name.strip()
+    if raw in allowed_keys:
+        return True
+    if not (len(raw) == 1 and raw.isalpha()):
+        return raw.lower() in {k.lower() for k in allowed_keys}
+    return False
+
+
 class GridManager:
     """Gère la géométrie de la grille d'écran et l'acheminement du curseur vers chaque cellule."""
 
@@ -140,7 +152,7 @@ class GridManager:
         """Indique si la touche bascule vers ou depuis le mode sous-grille."""
         if not self.config.subgrid_enabled:
             return False
-        return key_name.lower().strip() in self.config.subgrid_toggle_keys
+        return _matches_key(key_name, self.config.subgrid_toggle_keys)
 
     def toggle_subgrid(self) -> bool:
         """Bascule l'état du mode sous-grille.
@@ -197,7 +209,7 @@ class GridManager:
         """Indique si la touche déclenche le rapprochement vers le bord."""
         if not self.config.edge_snap_enabled:
             return False
-        return key_name.lower().strip() in self.config.edge_snap_keys
+        return _matches_key(key_name, self.config.edge_snap_keys)
 
     def get_cell_at_position(
         self,

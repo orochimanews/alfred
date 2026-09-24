@@ -455,6 +455,31 @@ class KeyboardHookService:
             if not self.state_manager.is_hook_enabled:
                 return True
 
+            # Résolution des touches candidates avec sensibilité à la casse et état de Shift / Caps Lock
+            is_shift = (
+                is_modifier_pressed_win32("shift")
+                or any(k in self._pressed_keys for k in ("shift", "maj", "left shift", "right shift"))
+            )
+            is_caps = is_caps_lock_active_win32()
+
+            dispatch_candidate_keys: list[str] = []
+            if len(key_name) == 1 and key_name.isalpha():
+                raw_event_name = (event.name or "").strip()
+                is_upper = raw_event_name.isupper() or (is_shift != is_caps)
+                if is_upper:
+                    dispatch_candidate_keys = [
+                        key_name.upper(),
+                        f"shift+{key_name.lower()}",
+                        f"maj+{key_name.lower()}",
+                    ]
+                else:
+                    dispatch_candidate_keys = [key_name.lower()]
+            else:
+                dispatch_candidate_keys = list(candidate_keys)
+                raw_event_name = (event.name or "").strip()
+                if raw_event_name and raw_event_name not in dispatch_candidate_keys:
+                    dispatch_candidate_keys.insert(0, raw_event_name)
+
             current_mode = self.state_manager.current_mode
             gen_cfg = self.config_manager.app_config.general
             special_key = gen_cfg.special_mode_key.lower().strip()
@@ -462,8 +487,8 @@ class KeyboardHookService:
             # 1. Vérification de la touche de bascule vers le mode spécial (si configurée en dur)
             matched_special_key = None
             if special_key and not is_repeat:
-                for cand in candidate_keys:
-                    if cand == special_key:
+                for cand in dispatch_candidate_keys:
+                    if cand.lower() == special_key:
                         matched_special_key = cand
                         break
 
@@ -492,12 +517,11 @@ class KeyboardHookService:
                 and not is_repeat
             ):
                 is_enter = (
-                    any(k in ("enter", "return", "entree") for k in candidate_keys)
+                    any(k in ("enter", "return", "entree") for k in dispatch_candidate_keys)
                     or getattr(event, "scan_code", None) in (28, 284)
                 )
                 if is_enter:
                     # Si Shift est maintenu (ex: saut de ligne dans textarea/messagerie), ne pas basculer
-                    is_shift = any(k in self._pressed_keys for k in ("shift", "maj", "left shift", "right shift"))
                     if not is_shift:
                         logger.debug("Touche Entrée détectée après auto-switch champ texte. Programmation du retour en mode spécial.")
                         self.state_manager.set_auto_switched_to_normal(False)
@@ -526,7 +550,7 @@ class KeyboardHookService:
             # 2. Vérification du déplacement dynamique au clavier (Move) et Grille Pavé Numérique
             move_cfg = self.config_manager.move_config
             if self.move_manager and move_cfg.enabled and (current_mode in move_cfg.active_modes or "all" in move_cfg.active_modes):
-                for cand in candidate_keys:
+                for cand in dispatch_candidate_keys:
                     # 2a. Touche Toggle Grille Pavé Numérique
                     if self.move_manager.is_grid_toggle_key(cand):
                         if not is_repeat:
@@ -569,7 +593,7 @@ class KeyboardHookService:
             # 2. Vérification de la grille souris si le mode actif fait partie des active_modes
             grid_cfg = self.config_manager.grid_config
             if grid_cfg.enabled and (current_mode in grid_cfg.active_modes or "all" in grid_cfg.active_modes):
-                for cand in candidate_keys:
+                for cand in dispatch_candidate_keys:
                     # 2a. Touche de bascule vers/depuis le mode sous-grille (subgrid toggle)
                     if self.grid_manager.is_subgrid_toggle_key(cand):
                         logger.debug("Touche toggle sous-grille détectée : '%s'", cand)
@@ -613,33 +637,9 @@ class KeyboardHookService:
                         return False
 
             # 3. Vérification des actions enregistrées pour le mode actif
-            is_shift = (
-                is_modifier_pressed_win32("shift")
-                or any(k in self._pressed_keys for k in ("shift", "maj", "left shift", "right shift"))
-            )
-            is_caps = is_caps_lock_active_win32()
-
-            action_candidate_keys: list[str] = []
-            if len(key_name) == 1 and key_name.isalpha():
-                raw_event_name = (event.name or "").strip()
-                is_upper = raw_event_name.isupper() or (is_shift != is_caps)
-                if is_upper:
-                    action_candidate_keys = [
-                        key_name.upper(),
-                        f"shift+{key_name.lower()}",
-                        f"maj+{key_name.lower()}",
-                    ]
-                else:
-                    action_candidate_keys = [key_name.lower()]
-            else:
-                action_candidate_keys = list(candidate_keys)
-                raw_event_name = (event.name or "").strip()
-                if raw_event_name and raw_event_name not in action_candidate_keys:
-                    action_candidate_keys.insert(0, raw_event_name)
-
             action = None
             matched_trigger = key_name
-            for cand in action_candidate_keys:
+            for cand in dispatch_candidate_keys:
                 action = self.config_manager.get_action_for_key(cand, current_mode)
                 if action is not None:
                     matched_trigger = cand
