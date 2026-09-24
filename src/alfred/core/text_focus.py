@@ -114,7 +114,13 @@ class TextInputFocusWatcher:
                 _com_interfaces_ = [UIAutomationCore.IUIAutomationFocusChangedEventHandler]
 
                 def HandleFocusChangedEvent(self, sender: Any) -> None:
-                    watcher_ref._on_focus_changed(sender, UIAutomationCore)
+                    # Ne jamais bloquer le thread de dispatching COM ni le GIL Windows
+                    threading.Thread(
+                        target=watcher_ref._on_focus_changed,
+                        args=(sender, UIAutomationCore),
+                        daemon=True,
+                        name="Alfred-FocusChangedWorker",
+                    ).start()
 
             handler = FocusHandler()
             uia.AddFocusChangedEventHandler(None, handler)

@@ -429,6 +429,13 @@ class SettingsModal(ctk.CTkToplevel):
         # Sauvegarde sur le disque
         self.config_manager.save_app_config()
 
+        # Gestion dynamique du service de détection des champs texte
+        if hasattr(self.master, "text_focus_watcher") and self.master.text_focus_watcher:
+            if new_auto_exit and not self.master.text_focus_watcher.is_running:
+                self.master.text_focus_watcher.start()
+            elif not new_auto_exit and self.master.text_focus_watcher.is_running:
+                self.master.text_focus_watcher.stop()
+
         # Application du thème
         self.theme_manager.apply_theme()
 

@@ -71,18 +71,13 @@ def _setup_hook_thread_win32() -> None:
         except Exception:
             pass
 
-        # 3. Marquer le thread comme "Pro Audio" via AVRT → priorité temps-réel garantie
-        # Même mécanisme que les DAW (Ableton, Pro Tools) pour éviter tout lag système
-        try:
-            avrt = ctypes.WinDLL("avrt.dll")
-            task_index = ctypes.c_ulong(0)
-            avrt.AvSetMmThreadCharacteristicsW("Pro Audio", ctypes.byref(task_index))
-        except Exception:
-            pass
-
-        logger.debug("Thread hook clavier optimisé : priorité HIGHEST, EcoQoS off, AVRT Pro Audio.")
+        logger.debug("Thread hook clavier optimisé : priorité HIGHEST, EcoQoS off.")
     except Exception as err:
         logger.debug("Impossible d'optimiser le thread du hook : %s", err)
+
+
+_current_hook_handle: Any = None
+_hook_thread_id: int | None = None
 
 
 def _patch_keyboard_windows_listen() -> None:
@@ -91,8 +86,8 @@ def _patch_keyboard_windows_listen() -> None:
     Par défaut, keyboard._winkeyboard fait 'msg = LPMSG()', ce qui passe un pointeur NULL
     à GetMessage(). Dès qu'un message système arrive dans la file du thread, une violation
     d'accès (Access Violation 0x00000008) survient et tue le thread d'écoute en silence.
-    Ce patch alloue une structure MSG() valide, implémente la vraie boucle Win32,
-    et optimise le thread pour qu'il reste actif même quand toutes les fenêtres sont cachées.
+    Ce patch alloue une structure MSG() valide, capture le thread ID et le hook handle pour
+    permettre la réinstallation à chaud, et optimise le thread scheduler.
     """
     if sys.platform != "win32":
         return
@@ -102,24 +97,43 @@ def _patch_keyboard_windows_listen() -> None:
         import ctypes
         from ctypes.wintypes import MSG
 
+        # Intercepter SetWindowsHookEx pour conserver le handle HHOOK
+        if not getattr(_winkeyboard, "_alfred_hook_patched", False):
+            orig_set_hook = _winkeyboard.SetWindowsHookEx
+
+            def custom_set_hook(*args, **kwargs):
+                global _current_hook_handle
+                h = orig_set_hook(*args, **kwargs)
+                _current_hook_handle = h
+                return h
+
+            _winkeyboard.SetWindowsHookEx = custom_set_hook
+            _winkeyboard._alfred_hook_patched = True
+
         def safe_listen(callback):
-            # Optimiser ce thread immédiatement : priorité haute, EcoQoS désactivé, AVRT.
-            # Critique pour le build PyInstaller --windowed : sans fenêtre visible,
-            # Windows throttle le thread du hook et les callbacks WH_KEYBOARD_LL ne sont plus livrés.
+            global _hook_thread_id
+            import ctypes
+            kernel32 = ctypes.windll.kernel32
+            _hook_thread_id = kernel32.GetCurrentThreadId()
+
+            # Optimiser ce thread immédiatement : priorité haute, EcoQoS désactivé.
             _setup_hook_thread_win32()
-            _winkeyboard.prepare_intercept(callback)
-            msg = MSG()
-            p_msg = ctypes.byref(msg)
-            # Boucle Win32 robuste : s'arrête sur WM_QUIT (0), tolère les retours -1 transitoires
-            while True:
-                res = _winkeyboard.GetMessage(p_msg, 0, 0, 0)
-                if res == 0:  # WM_QUIT reçu
-                    break
-                elif res == -1:  # Erreur système transitoire, ne pas quitter le thread
-                    time.sleep(0.01)
-                    continue
-                _winkeyboard.TranslateMessage(p_msg)
-                _winkeyboard.DispatchMessage(p_msg)
+            try:
+                _winkeyboard.prepare_intercept(callback)
+                msg = MSG()
+                p_msg = ctypes.byref(msg)
+                # Boucle Win32 robuste : s'arrête sur WM_QUIT (0), tolère les retours -1 transitoires
+                while True:
+                    res = _winkeyboard.GetMessage(p_msg, 0, 0, 0)
+                    if res == 0:  # WM_QUIT reçu
+                        break
+                    elif res == -1:  # Erreur système transitoire, ne pas quitter le thread
+                        time.sleep(0.01)
+                        continue
+                    _winkeyboard.TranslateMessage(p_msg)
+                    _winkeyboard.DispatchMessage(p_msg)
+            finally:
+                _hook_thread_id = None
 
         _winkeyboard.listen = safe_listen
         logger.debug("Patch de sécurité appliqué à keyboard._winkeyboard.listen.")
@@ -233,6 +247,8 @@ class KeyboardHookService:
         self._hook_installed: bool = False
         self._pressed_keys: set[str] = set()
         self._quit_callback: Callable[[], None] | None = None
+        self._hook_lock = threading.RLock()
+        self._last_event_time: float = time.time()
 
         # Surveiller les changements de mode pour couper les mouvements en cours si nécessaire
         self.state_manager.subscribe(self._on_state_event)
@@ -255,24 +271,91 @@ class KeyboardHookService:
 
     def start(self) -> None:
         """Démarre l'écoute globale du clavier."""
-        if self._hook_installed:
-            return
-        # Appliquer le patch Win32 avant d'installer le hook
-        _patch_keyboard_windows_listen()
-        keyboard.hook(self._on_key_event, suppress=True)
-        self._hook_installed = True
-        logger.info("Hook clavier global installé avec succès.")
+        with self._hook_lock:
+            if self._hook_installed:
+                return
+            self._install_hook()
+            logger.info("Hook clavier global installé avec succès.")
 
     def stop(self) -> None:
         """Arrête l'écoute du clavier."""
-        if not self._hook_installed:
-            return
+        with self._hook_lock:
+            if not self._hook_installed:
+                return
+            self._teardown_hook()
+            logger.info("Hook clavier global désactivé.")
+
+    def _install_hook(self) -> None:
+        """Installe le hook bas-niveau Windows et démarre le thread."""
+        _patch_keyboard_windows_listen()
+        keyboard.hook(self._on_key_event, suppress=True)
+        self._hook_installed = True
+
+    def _teardown_hook(self) -> None:
+        """Détruit proprement le hook et le thread de message loop existant."""
+        global _current_hook_handle, _hook_thread_id
         try:
-            keyboard.unhook(self._on_key_event)
-        except Exception:
-            pass
-        self._hook_installed = False
-        logger.info("Hook clavier global désactivé.")
+            if sys.platform == "win32":
+                from keyboard import _winkeyboard
+                import ctypes
+
+                # 1. Unhook explicitement via Windows API si le handle existe
+                if _current_hook_handle:
+                    try:
+                        _winkeyboard.UnhookWindowsHookEx(_current_hook_handle)
+                    except Exception:
+                        pass
+                    _current_hook_handle = None
+
+                # 2. Envoyer WM_QUIT (0x0012) au thread de la boucle GetMessage pour le libérer
+                if _hook_thread_id:
+                    try:
+                        ctypes.windll.user32.PostThreadMessageW(_hook_thread_id, 0x0012, 0, 0)
+                    except Exception:
+                        pass
+                    _hook_thread_id = None
+
+            # 3. Réinitialiser l'état interne de la bibliothèque keyboard
+            if hasattr(keyboard, "_listener") and keyboard._listener:
+                keyboard._listener.listening = False
+                if hasattr(keyboard._listener, "blocking_hooks"):
+                    del keyboard._listener.blocking_hooks[:]
+                old_thread = getattr(keyboard._listener, "listening_thread", None)
+                if old_thread and old_thread.is_alive():
+                    old_thread.join(timeout=0.3)
+
+            try:
+                keyboard.unhook(self._on_key_event)
+            except Exception:
+                pass
+
+            self._pressed_keys.clear()
+            self._hook_installed = False
+        except Exception as err:
+            logger.warning("Erreur lors de la désinstallation du hook : %s", err)
+            self._hook_installed = False
+
+    def reinstall_hook(self) -> None:
+        """Réinstalle proprement le hook clavier Windows (recréation complète du thread et de WH_KEYBOARD_LL)."""
+        with self._hook_lock:
+            logger.info("Réinstallation complète du hook clavier Windows...")
+            self._teardown_hook()
+            self._install_hook()
+            logger.info("Hook clavier Windows réinstallé avec succès.")
+
+    def ensure_hook_healthy(self) -> None:
+        """Vérifie la santé du hook clavier et le réinstalle automatiquement en cas d'anomalie."""
+        with self._hook_lock:
+            if not self._hook_installed:
+                self.start()
+                return
+
+            listener = getattr(keyboard, "_listener", None)
+            if listener:
+                listening_thread = getattr(listener, "listening_thread", None)
+                if listening_thread and not listening_thread.is_alive():
+                    logger.warning("Thread d'écoute du hook clavier inactif détecté. Réinstallation automatique...")
+                    self.reinstall_hook()
 
     def _on_state_event(self, event_type: str, data: Any) -> None:
         """Surveille les changements de mode applicatif."""
@@ -287,6 +370,7 @@ class KeyboardHookService:
         Retourne False pour supprimer la touche (l'intercepter), True pour la laisser passer.
         """
         try:
+            self._last_event_time = time.time()
             key_name = (event.name or "").lower().strip()
             if not key_name:
                 return True

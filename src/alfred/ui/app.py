@@ -73,6 +73,7 @@ class AlfredApp(ctk.CTk):
         grid_manager: GridManager,
         hook_service: KeyboardHookService,
         move_manager: MoveManager | None = None,
+        text_focus_watcher: Any | None = None,
     ) -> None:
         super().__init__()
 
@@ -82,6 +83,8 @@ class AlfredApp(ctk.CTk):
         self.grid_manager = grid_manager
         self.hook_service = hook_service
         self.move_manager = move_manager
+        self.text_focus_watcher = text_focus_watcher
+        self._keepalive_ticks: int = 0
 
         # Enregistrement du callback de fermeture globale pour le hook clavier et les commandes
         if self.hook_service:
@@ -155,6 +158,11 @@ class AlfredApp(ctk.CTk):
             pass
 
     def _keepalive_tick(self) -> None:
+        self._keepalive_ticks += 1
+        # Toutes les 10 itérations (~2 secondes), vérifier et garantir la santé du hook clavier
+        if self._keepalive_ticks % 10 == 0:
+            if hasattr(self, "hook_service") and self.hook_service:
+                self.hook_service.ensure_hook_healthy()
         self._schedule_keepalive()
 
     def _on_window_unmap(self, event: Any) -> None:
@@ -170,6 +178,8 @@ class AlfredApp(ctk.CTk):
         """Réduit la fenêtre dans la zone de notification Windows (systray)."""
         logger.info("Réduction d'Alfred dans la zone de notification...")
         self.withdraw()
+        if hasattr(self, "hook_service") and self.hook_service:
+            self.hook_service.ensure_hook_healthy()
         if hasattr(self, "screen_indicator") and self.screen_indicator and self.screen_indicator.enabled:
             self.screen_indicator.reposition()
             if self.screen_indicator._window:
@@ -180,6 +190,8 @@ class AlfredApp(ctk.CTk):
     def restore_from_tray(self) -> None:
         """Restaure et affiche la fenêtre Alfred au premier plan."""
         logger.info("Restauration d'Alfred depuis la zone de notification...")
+        if hasattr(self, "hook_service") and self.hook_service:
+            self.hook_service.ensure_hook_healthy()
         self.deiconify()
         self.lift()
         self.focus_force()
@@ -196,6 +208,8 @@ class AlfredApp(ctk.CTk):
         logger.info("Fermeture de l'application Alfred...")
         if hasattr(self, "tray_service") and self.tray_service:
             self.tray_service.stop()
+        if hasattr(self, "text_focus_watcher") and self.text_focus_watcher:
+            self.text_focus_watcher.stop()
         if hasattr(self, "hook_service") and self.hook_service:
             self.hook_service.stop()
         if hasattr(self, "move_manager") and self.move_manager:

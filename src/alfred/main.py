@@ -197,7 +197,8 @@ def main() -> None:
 
     # 4. Démarrage des services d'arrière-plan
     hook_service.start()
-    text_focus_watcher.start()
+    if getattr(config_mgr.app_config.general, "auto_exit_on_text_input", False):
+        text_focus_watcher.start()
 
     if args.headless:
         quit_event = threading.Event()
@@ -228,6 +229,7 @@ def main() -> None:
             grid_manager=grid_mgr,
             hook_service=hook_service,
             move_manager=move_mgr,
+            text_focus_watcher=text_focus_watcher,
         )
 
         app.protocol("WM_DELETE_WINDOW", app.close)

@@ -136,3 +136,37 @@ def test_setup_hook_thread_win32_does_not_crash():
     _setup_hook_thread_win32()
 
 
+def test_hook_reinstall_and_health_check(monkeypatch):
+    """Vérifie que la réinstallation et la surveillance du hook s'exécutent correctement."""
+    config_mgr = ConfigManager()
+    config_mgr.load_all()
+    state_mgr = StateManager(initial_mode="special")
+    grid_mgr = GridManager(config=config_mgr.grid_config, state_manager=state_mgr)
+    commands_engine = CommandsEngine(state_manager=state_mgr, grid_manager=grid_mgr, config_manager=config_mgr)
+
+    hook_service = KeyboardHookService(
+        state_manager=state_mgr,
+        config_manager=config_mgr,
+        commands_engine=commands_engine,
+        grid_manager=grid_mgr,
+    )
+
+    installed = []
+    teardowns = []
+    monkeypatch.setattr(hook_service, "_install_hook", lambda: installed.append(True))
+    monkeypatch.setattr(hook_service, "_teardown_hook", lambda: teardowns.append(True))
+
+    # 1. Test reinstall_hook
+    hook_service.reinstall_hook()
+    assert len(teardowns) == 1
+    assert len(installed) == 1
+
+    # 2. Test ensure_hook_healthy quand hook non installé -> appelle start()
+    started = []
+    monkeypatch.setattr(hook_service, "start", lambda: started.append(True))
+    hook_service._hook_installed = False
+    hook_service.ensure_hook_healthy()
+    assert len(started) == 1
+
+
+
